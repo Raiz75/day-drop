@@ -1,0 +1,19 @@
+{
+  "name": "DayDrop",
+  "short_name": "DayDrop",
+  "description": "Your day, dropped in - a story-like journal tracker.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf9f1",
+  "theme_color": "#e8833a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/images/launcher-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "version": "0.1.0"
+}
