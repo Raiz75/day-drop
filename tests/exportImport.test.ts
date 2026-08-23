@@ -42,7 +42,7 @@ const entry: DayEntry = {
   workouts: [], screenTimeTier: 2, readingTier: 2, sleptAt: "22:30", wokeAt: "06:30",
   mood: "happy", highlight: "x".repeat(25), improve: "y".repeat(25), grateful: "z".repeat(25),
   todayTasks: [], tomorrowPlan: ["a"], bucketList: null, habitsChecked: [],
-  createdAt: 1, updatedAt: 1,
+  activeHabitCount: 0, createdAt: 1, updatedAt: 1,
 };
 
 beforeEach(() => {

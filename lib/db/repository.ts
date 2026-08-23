@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Sole write path to IndexedDB: entries, habits, meta (drafts/rewards).","IDD":[{"?":"Every mutation is an exported async fn; components/hooks NEVER touch db.write directly."},{"?":"submitEntry runs atomically: entry upsert + draft clear + habit day-100 auto-archive."},{"?":"evaluateFinishedMonths is lazy grading called on app open; idempotent via final statuses."},{"?":"Day-100 archive is calendar-based: archivedAt set when entry.date == startedOn+99d."}],"A":[{"!!!":"lib/hooks/*.ts consume these; never call from inside useLiveQuery"},{"?":"components/journal/JournalWizard.tsx submit flow"},{"?":"components/settings/SettingsView.tsx import/export"}],"AB":[{"?":"lib/db/schema.ts"},{"?":"lib/scoring.ts evaluateMonth"},{"?":"lib/format.ts addDays/monthKeyOf"}],"E":[{"!!":"tests/repository.test.ts"},{"!!":"npm run build"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Sole write path to IndexedDB: entries, habits, meta (drafts/rewards).","IDD":[{"?":"Every mutation is an exported async fn; components/hooks NEVER touch db.write directly."},{"?":"submitEntry runs atomically: entry upsert + draft clear + habit day-100 auto-archive."},{"!":"submitEntry stamps entries.activeHabitCount from its activeHabitIds arg - the per-day scoring snapshot"},{"?":"evaluateFinishedMonths is lazy grading called on app open; idempotent via final statuses."},{"?":"Day-100 archive is calendar-based: archivedAt set when entry.date == startedOn+99d."}],"A":[{"!!!":"lib/hooks/*.ts consume these; never call from inside useLiveQuery"},{"?":"components/journal/JournalWizard.tsx submit flow"},{"?":"components/settings/SettingsView.tsx import/export"}],"AB":[{"?":"lib/db/schema.ts"},{"?":"lib/scoring.ts evaluateMonth"},{"?":"lib/format.ts addDays/monthKeyOf"}],"E":[{"!!":"tests/repository.test.ts"},{"!!":"npm run build"}]} */
 import {
   db, DRAFT_KEY, newId, rewardKey,
   type DayEntry, type Habit, type JournalDraft, type RewardRecord, type RewardStatus,
@@ -32,12 +32,15 @@ export async function getLatestEntryBefore(date: string): Promise<DayEntry | und
 
 export async function submitEntry(
   payload: DayEntry,
-  _activeHabitIds: string[],
+  activeHabitIds: string[],
 ): Promise<{ archivedHabits: Habit[] }> {
-  void _activeHabitIds;
   const archivedHabits: Habit[] = [];
   await db.transaction("rw", db.entries, db.habits, db.meta, async () => {
-    await db.entries.put({ ...payload, updatedAt: Date.now() });
+    await db.entries.put({
+      ...payload,
+      updatedAt: Date.now(),
+      activeHabitCount: activeHabitIds.length,
+    });
     await db.meta.delete(DRAFT_KEY);
     const actives = await db.habits.where("archivedAt").equals(ACTIVE_INDEX).toArray();
     for (const h of actives) {

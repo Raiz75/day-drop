@@ -8,7 +8,7 @@ function entry(date: string, over: Partial<DayEntry> = {}): DayEntry {
     screenTimeTier: 0, readingTier: 6, sleptAt: "22:30", wokeAt: "06:30", mood: "happy",
     highlight: "x".repeat(25), improve: "y".repeat(25), grateful: "z".repeat(25),
     todayTasks: [], tomorrowPlan: ["t"], bucketList: null, habitsChecked: [],
-    createdAt: 0, updatedAt: 0, ...over,
+    activeHabitCount: 0, createdAt: 0, updatedAt: 0, ...over,
   };
 }
 

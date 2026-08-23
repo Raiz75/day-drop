@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Full-screen fallback rendered when IndexedDB is unavailable (private-mode edge cases).","IDD":[{"?":"Probes window.indexedDB existence only - Dexie opens lazily later."}],"A":[{"!":"app/layout.tsx gates all page content behind this check"}],"AB":[],"E":[{"?":"Must render even without any DB"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Full-screen fallback component each route view renders via per-view early-return (if (storage === false) return <StorageUnavailable/>) driven by useStorageAvailable's real IndexedDB probe.","IDD":[{"?":"Per-view early-return design: every view calls useStorageAvailable itself and bails to this component; this file stays dumb and keeps only a cheap window.indexedDB existence guard"},{"?":"Dexie opens lazily later - a successful probe does not guarantee the app DB opens, but covers private-mode blocks"}],"A":[{"!":"Route views (Dashboard/Tasks/Habits/Settings) early-return this component"}],"AB":[{"?":"lib/hooks/useHydrated.ts useStorageAvailable supplies the false signal"}],"E":[{"?":"Must render even without any DB"}]} */
 "use client";
 import { IconDatabaseOff } from "@tabler/icons-react";
 

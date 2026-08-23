@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Pure scoring engine: per-metric 1-10 daily scores, daily total (max 70), monthly reward evaluation.","IDD":[{"?":"Never returns 0 for a scored metric (floor 1) per spec."},{"?":"Workout sums option points capped at 10."},{"?":"Sleep bands: [7,9]=10, [6,7)/(9,10]=7, [5,6)/(10,11]=4, else 2."},{"?":"Habit partial formula needs active-habit count; defaults to checked length."},{"?":"Monthly unlock needs ratio>=0.8 AND coverage>=ceil(daysInMonth*0.5)."}],"A":[{"!!!":"lib/journal/steps.ts","CRITICAL":"option ids and tierScores arrays are consumed positionally"},{"?":"lib/streaks.ts threshold"},{"?":"components/dashboard/RewardBanner.tsx"},{"?":"lib/db/repository.ts lazy month evaluation"}],"AB":[{"?":"lib/format.ts sleepHours/daysInMonth"}],"E":[{"!!":"tests/scoring.test.ts"},{"?":"Tuning point values: edit STEPS options/tierScores, not this file"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Pure scoring engine: per-metric 1-10 daily scores, daily total (max 70), monthly reward evaluation.","IDD":[{"?":"Never returns 0 for a scored metric (floor 1) per spec."},{"?":"Workout sums option points capped at 10."},{"?":"Sleep bands: [7,9]=10, [6,7)/(9,10]=7, [5,6)/(10,11]=4, else 2."},{"!":"Habit total precedence: explicit arg > entry.activeHabitCount (when >0; v1 rows lack it) > checked.length"},{"?":"Monthly unlock needs ratio>=0.8 AND coverage>=ceil(daysInMonth*0.5)."}],"A":[{"!!!":"lib/journal/steps.ts","CRITICAL":"option ids and tierScores arrays are consumed positionally"},{"?":"lib/streaks.ts threshold"},{"?":"components/dashboard/RewardBanner.tsx"},{"?":"lib/db/repository.ts lazy month evaluation"}],"AB":[{"?":"lib/format.ts sleepHours/daysInMonth"}],"E":[{"!!":"tests/scoring.test.ts"},{"?":"Tuning point values: edit STEPS options/tierScores, not this file"}]} */
 import { sleepHours, daysInMonth } from "@/lib/format";
 import { stepById } from "@/lib/journal/steps";
 import type { DayEntry } from "@/lib/db/schema";
@@ -50,7 +50,10 @@ export function scoreEntry(
   const screenTime = tierScore("screenTime", e.screenTimeTier);
   const reading = tierScore("reading", e.readingTier);
   const sleep = sleepScore(e.sleptAt, e.wokeAt);
-  const habits = habitScore(e.habitsChecked, activeHabitCount);
+  const habits = habitScore(
+    e.habitsChecked,
+    activeHabitCount ?? (e.activeHabitCount > 0 ? e.activeHabitCount : undefined),
+  );
   const total = health + steps + workout + screenTime + reading + sleep + habits;
   return { health, steps, workout, screenTime, reading, sleep, habits, total };
 }

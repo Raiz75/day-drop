@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"JSON backup build/parse/merge for settings import-export.","IDD":[{"?":"Strict zod validation before touching the DB; duplicates by primary key are skipped."},{"?":"Rewards are restored as-is (they are already final or active records)."}],"A":[{"?":"components/settings/SettingsView.tsx"}],"AB":[{"?":"zod"},{"?":"lib/db/schema.ts"},{"?":"lib/db/repository.ts is NOT used here - direct db writes in one transaction"}],"E":[{"!!":"tests/exportImport.test.ts"},{"?":"Never partially import: wrap merge in db.transaction"}]} */
+/* AI-CONTEXT-NOTE:{"R":"JSON backup build/parse/merge for settings import-export.","IDD":[{"?":"Strict zod validation before touching the DB; duplicates by primary key are skipped."},{"?":"Rewards are restored as-is (they are already final or active records)."},{"!":"entrySchema keeps activeHabitCount optional so v1 backups import; merge defaults it to 0 (scoring falls back to checked length)"}],"A":[{"?":"components/settings/SettingsView.tsx"}],"AB":[{"?":"zod"},{"?":"lib/db/schema.ts"},{"?":"lib/db/repository.ts is NOT used here - direct db writes in one transaction"}],"E":[{"!!":"tests/exportImport.test.ts"},{"?":"Never partially import: wrap merge in db.transaction"}]} */
 import { z } from "zod";
 import { db, type DayEntry, type Habit, type RewardRecord } from "@/lib/db/schema";
 
@@ -17,6 +17,7 @@ const entrySchema = z.object({
   tomorrowPlan: z.array(z.string()),
   bucketList: z.string().nullable(),
   habitsChecked: z.array(z.string()),
+  activeHabitCount: z.number().optional(),
   createdAt: z.number(), updatedAt: z.number(),
 });
 
@@ -66,7 +67,7 @@ export async function mergeBackup(data: BackupFile) {
   await db.transaction("rw", db.entries, db.habits, db.meta, async () => {
     for (const e of data.entries) {
       if (await db.entries.get(e.date)) skippedEntries++;
-      else { await db.entries.put(e); importedEntries++; }
+      else { await db.entries.put({ ...e, activeHabitCount: e.activeHabitCount ?? 0 }); importedEntries++; }
     }
     for (const h of data.habits) {
       if (!(await db.habits.get(h.id))) { await db.habits.put(h); importedHabits++; }

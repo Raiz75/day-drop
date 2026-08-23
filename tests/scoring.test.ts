@@ -9,7 +9,7 @@ const base: DayEntry = {
   sleptAt: "22:30", wokeAt: "06:30", mood: "happy",
   highlight: "x".repeat(25), improve: "y".repeat(25), grateful: "z".repeat(25),
   todayTasks: [{ text: "t", done: true }], tomorrowPlan: ["a"], bucketList: null,
-  habitsChecked: [], createdAt: 0, updatedAt: 0,
+  habitsChecked: [], activeHabitCount: 4, createdAt: 0, updatedAt: 0,
 };
 
 describe("scoreEntry", () => {
@@ -40,6 +40,17 @@ describe("scoreEntry", () => {
     expect(scoreEntry(e2, 4).habits).toBe(6);
     const eAll = { ...base, habitsChecked: ["a", "b"] };
     expect(scoreEntry(eAll, 2).habits).toBe(10);
+  });
+  it("uses the stored activeHabitCount snapshot when no arg is passed", () => {
+    // 1 checked of 3 active (snapshot) -> 1 + round(9*1/3) = 4
+    expect(scoreEntry({ ...base, habitsChecked: ["a"], activeHabitCount: 3 }).habits).toBe(4);
+  });
+  it("v1 rows without a snapshot fall back to checked length", () => {
+    const full = { ...base, habitsChecked: ["a", "b"] };
+    const legacy = Object.fromEntries(
+      Object.entries(full).filter(([key]) => key !== "activeHabitCount"),
+    ) as unknown as DayEntry;
+    expect(scoreEntry(legacy).habits).toBe(10);
   });
 });
 

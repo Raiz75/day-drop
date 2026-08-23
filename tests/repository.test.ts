@@ -78,7 +78,7 @@ function fullEntry(date: string): Parameters<typeof submitEntry>[0] {
     screenTimeTier: 0, readingTier: 6, sleptAt: "22:30", wokeAt: "06:30", mood: "happy",
     highlight: "x".repeat(25), improve: "y".repeat(25), grateful: "z".repeat(25),
     todayTasks: [], tomorrowPlan: ["ship"], bucketList: null, habitsChecked: ["any"],
-    createdAt: 1, updatedAt: 1,
+    activeHabitCount: 1, createdAt: 1, updatedAt: 1,
   };
 }
 

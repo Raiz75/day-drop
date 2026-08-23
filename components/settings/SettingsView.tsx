@@ -1,10 +1,11 @@
-/* AI-CONTEXT-NOTE:{"R":"Settings view: monthly reward editor, scoring reference table rendered from STEPS config, JSON backup export/import, light/dark/system theme toggle, and an About card with APP_VERSION plus service-worker update actions.","IDD":[{"?":"ALL hooks run before the storage early-returns to keep hook order stable"},{"?":"RewardEditor remounts via key={month} so the textarea prefills from the freshly loaded record - no setState-in-effect (lint rejects it)"},{"?":"Scoring reference renders FROM lib/journal/steps.ts STEPS config (options points / tierScores) so docs can never drift from code"},{"?":"Export builds the backup client-side from live queries then downloads via Blob + anchor click; Import parses strictly BEFORE mergeBackup so the DB is untouched on failure"},{"?":"Export data uses useLiveQuery reads directly here per task contract; writes still go through repository only"}],"A":[{"!!!":"app/settings/page.tsx","CRITICAL":"renders this view as the whole route"},{"?":"dashboard RewardBanner shows the reward text saved here"},{"?":"public/sw.js","SKIP_WAITING is posted by applyUpdate in the About card"}],"AB":[{"?":"lib/db/repository.ts setMonthlyReward"},{"?":"lib/exportImport.ts buildBackup/parseBackup/mergeBackup"},{"?":"lib/db/schema.ts rewardKey/RewardRecord/db reads"},{"?":"lib/journal/steps.ts STEPS config"},{"?":"next-themes useTheme"},{"?":"lib/hooks/useServiceWorkerUpdate.ts status/checkForUpdates/applyUpdate"},{"?":"lib/version.ts APP_VERSION (Task 17 stamp script overwrites the placeholder)"}],"E":[{"!!":"npm run build"},{"!!":"npm run lint"},{"?":"Manual smoke: export downloads valid JSON; re-importing it reports all duplicates skipped; saving a reward reflects on the dashboard banner; theme toggle persists across reloads"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Settings view: monthly reward editor, scoring reference table rendered from STEPS config, JSON backup export/import, light/dark/system theme toggle, and an About card with APP_VERSION plus service-worker update actions.","IDD":[{"?":"ALL hooks run before the storage early-returns to keep hook order stable"},{"?":"RewardEditor remounts via key={month} so the textarea prefills from the freshly loaded record - no setState-in-effect (lint rejects it)"},{"?":"Scoring reference renders FROM lib/journal/steps.ts STEPS config (options points / tierScores) so docs can never drift from code"},{"?":"Export builds the backup client-side from live queries then downloads via Blob + anchor click; Import parses strictly BEFORE mergeBackup so the DB is untouched on failure"},{"?":"Export data uses useLiveQuery reads directly here per task contract; writes still go through repository only"},{"!":"Export filters meta reward:* values through zod safeParse (rewardRowSchema) - malformed meta rows are skipped, never blind-cast"}],"A":[{"!!!":"app/settings/page.tsx","CRITICAL":"renders this view as the whole route"},{"?":"dashboard RewardBanner shows the reward text saved here"},{"?":"public/sw.js","SKIP_WAITING is posted by applyUpdate in the About card"}],"AB":[{"?":"lib/db/repository.ts setMonthlyReward"},{"?":"lib/exportImport.ts buildBackup/parseBackup/mergeBackup"},{"?":"lib/db/schema.ts rewardKey/RewardRecord/db reads"},{"?":"lib/journal/steps.ts STEPS config"},{"?":"next-themes useTheme"},{"?":"lib/hooks/useServiceWorkerUpdate.ts status/checkForUpdates/applyUpdate"},{"?":"lib/version.ts APP_VERSION (Task 17 stamp script overwrites the placeholder)"}],"E":[{"!!":"npm run build"},{"!!":"npm run lint"},{"?":"Manual smoke: export downloads valid JSON; re-importing it reports all duplicates skipped; saving a reward reflects on the dashboard banner; theme toggle persists across reloads"}]} */
 "use client";
 
 import { useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { z } from "zod";
 import {
   IconDownload,
   IconRefresh,
@@ -58,6 +59,15 @@ const THEME_OPTIONS = [
   { value: "dark", label: "Dark" },
   { value: "system", label: "System" },
 ] as const;
+
+const rewardRowSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  text: z.string().nullable(),
+  status: z.enum(["pending", "active", "earned", "missed", "claimed"]),
+  score: z.number().optional(),
+  maxPossible: z.number().optional(),
+  ratio: z.number().optional(),
+});
 
 function scoredStepPoints(step: StepDef, optionIndex: number): number | undefined {
   const option = step.options?.[optionIndex];
@@ -132,11 +142,11 @@ export function SettingsView() {
 
   const handleExport = () => {
     if (entries === undefined || habits === undefined || rewardRows === undefined) return;
-    const backup = buildBackup(
-      entries,
-      habits,
-      rewardRows.map((row) => row.value as RewardRecord),
-    );
+    const rewards = rewardRows.flatMap((row) => {
+      const parsed = rewardRowSchema.safeParse(row.value);
+      return parsed.success ? [parsed.data] : [];
+    });
+    const backup = buildBackup(entries, habits, rewards);
     const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: "application/json",
     });
