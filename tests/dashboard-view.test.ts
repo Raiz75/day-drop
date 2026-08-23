@@ -43,7 +43,7 @@ describe("dashboard pieces", () => {
       }),
     );
     expect(screen.getByText(/set your monthly reward/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /choose/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /choose/i })).toHaveAttribute(
       "href",
       "/settings",
     );

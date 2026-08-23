@@ -36,7 +36,7 @@ export function HabitsStep({
     return (
       <div className="flex flex-col items-center gap-3 py-10 text-center">
         <p className="text-sm text-muted-foreground">no active habits yet.</p>
-        <Button render={<Link href="/habits" />}>manage habits</Button>
+        <Button nativeButton={false} render={<Link href="/habits" />}>manage habits</Button>
       </div>
     );
   }

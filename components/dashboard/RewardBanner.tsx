@@ -36,7 +36,7 @@ export function RewardBanner({ month, record, monthEntries }: Props) {
             <IconGift className="size-6 shrink-0 text-primary" />
             <p className="text-sm font-medium">Set your monthly reward</p>
           </div>
-          <Button render={<Link href="/settings" />}>Choose</Button>
+          <Button nativeButton={false} render={<Link href="/settings" />}>Choose</Button>
         </CardContent>
       </Card>
     );
