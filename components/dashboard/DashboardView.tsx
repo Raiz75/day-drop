@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, reward banner, heatmap calendar, streak chips, 30-day trend, DayDetailSheet for picked days, Fab + JournalWizard mount.","IDD":[{"?":"evaluateFinishedMonths runs once per app open, guarded by a ref, fire-and-forget with catch - grading past months lazily."},{"?":"Reward record read via useMetaValue(rewardKey(currentMonth)); month score/count derived from current-month entries inside RewardBanner."},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration mounts here in production (PWA task)."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes monthEntries + rewardRecord this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DayDetailSheet"}],"AB":[{"?":"lib/hooks/useEntries.ts + useMeta.ts"},{"?":"lib/db/repository.ts evaluateFinishedMonths"},{"?":"lib/streaks.ts allStreaks"},{"?":"lib/db/schema.ts rewardKey/RewardRecord"},{"?":"components/journal/JournalWizard.tsx"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> flame=1, heatmap today colored, chips populated, trend point, tap today opens sheet; pencil FAB prefills wizard"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, reward banner, heatmap calendar, streak chips, 30-day trend, DayDetailSheet for picked days, Fab + JournalWizard mount, BottomNav.","IDD":[{"?":"evaluateFinishedMonths runs once per app open, guarded by a ref, fire-and-forget with catch - grading past months lazily."},{"?":"Reward record read via useMetaValue(rewardKey(currentMonth)); month score/count derived from current-month entries inside RewardBanner."},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration mounts here in production (PWA task)."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes monthEntries + rewardRecord this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DayDetailSheet"}],"AB":[{"?":"lib/hooks/useEntries.ts + useMeta.ts"},{"?":"lib/db/repository.ts evaluateFinishedMonths"},{"?":"lib/streaks.ts allStreaks"},{"?":"lib/db/schema.ts rewardKey/RewardRecord"},{"?":"components/journal/JournalWizard.tsx"},{"?":"components/shared/BottomNav.tsx fixed height dictates pb-20 shell padding"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> flame=1, heatmap today colored, chips populated, trend point, tap today opens sheet; pencil FAB prefills wizard"}]} */
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -6,6 +6,7 @@ import { IconFlame } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Fab } from "@/components/shared/Fab";
 import { Header } from "@/components/shared/Header";
+import { BottomNav } from "@/components/shared/BottomNav";
 import { StorageUnavailable } from "@/components/shared/StorageFallback";
 import { JournalWizard } from "@/components/journal/JournalWizard";
 import { RewardBanner } from "./RewardBanner";
@@ -90,6 +91,7 @@ export function DashboardView() {
           if (!o) setPickedDate(null);
         }}
       />
+      <BottomNav />
     </div>
   );
 }
