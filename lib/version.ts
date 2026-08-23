@@ -1,0 +1,3 @@
+/* AI-CONTEXT-NOTE:{"R":"App version constant placeholder; Task 17's scripts/stamp-version.mjs overwrites this whole file at build time.","IDD":[{"?":"Temporary dev placeholder until the version-stamp script lands - import APP_VERSION, never hardcode versions elsewhere"},{"?":"Task 17 replaces this module wholesale; do not grow logic here"}],"A":[{"?":"components/settings/SettingsView.tsx About card displays APP_VERSION"}],"AB":[{"?":"scripts/stamp-version.mjs (Task 17) rewrites this file"}],"E":[{"?":"npm run build passes with the dev placeholder"},{"*":"Once Task 17 lands, never edit values here manually"}]} */
+// AI-NOTE: Task 17's stamp script (scripts/stamp-version.mjs) overwrites this file.
+export const APP_VERSION = "0.1.0-dev";
