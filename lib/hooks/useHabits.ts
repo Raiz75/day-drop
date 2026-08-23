@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db/schema";
 
 export function useActiveHabits() {
-  return useLiveQuery(() => db.habits.where("archivedAt").equals(null as never).toArray(), []);
+  return useLiveQuery(() => db.habits.filter((h) => h.archivedAt === null).toArray(), []);
 }
 
 export function useArchivedHabits() {

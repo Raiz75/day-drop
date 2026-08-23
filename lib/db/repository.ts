@@ -7,7 +7,7 @@ import { addDays, monthKeyOf, todayStr } from "@/lib/format";
 import { evaluateMonth } from "@/lib/scoring";
 
 // Dexie emulates null-index queries but its IndexableType excludes null.
-const ACTIVE_INDEX = null as never;
+
 
 async function getMeta<T>(key: string): Promise<T | undefined> {
   const row = await db.meta.get(key);
@@ -42,7 +42,7 @@ export async function submitEntry(
       activeHabitCount: activeHabitIds.length,
     });
     await db.meta.delete(DRAFT_KEY);
-    const actives = await db.habits.where("archivedAt").equals(ACTIVE_INDEX).toArray();
+    const actives = await db.habits.filter((h) => h.archivedAt === null).toArray();
     for (const h of actives) {
       if (payload.date === addDays(h.startedOn, 99)) {
         const archived: Habit = { ...h, archivedAt: payload.date };
@@ -69,7 +69,7 @@ export async function deleteHabit(id: string): Promise<void> {
 }
 
 export function getActiveHabits(): Promise<Habit[]> {
-  return db.habits.where("archivedAt").equals(ACTIVE_INDEX).toArray();
+  return db.habits.filter((h) => h.archivedAt === null).toArray();
 }
 
 export function getArchivedHabits(): Promise<Habit[]> {
