@@ -63,7 +63,7 @@ describe("exportImport", () => {
     expect(parseBackup(JSON.stringify({ app: "other" })).ok).toBe(false);
   });
   it("merge skips duplicates and counts", async () => {
-    await mockDb.entries.put(entry);
+    await mockDb.entries.put(entry as unknown as Parameters<typeof mockDb.entries.put>[0]);
     const res = await mergeBackup({ ...buildBackup([entry, { ...entry, date: "2026-08-24" }], [], []), });
     expect(res.importedEntries).toBe(1);
     expect(res.skippedEntries).toBe(1);
