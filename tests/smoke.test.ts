@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 describe("smoke", () => {
   it("runs vitest with jest-dom matchers available", () => {
-    expect(1 + 1).toBe(2);
+    const el = document.createElement("div");
+    el.className = "ok";
+    document.body.appendChild(el);
+    expect(el).toBeInTheDocument();
   });
 });
