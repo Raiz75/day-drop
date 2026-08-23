@@ -29,7 +29,7 @@ manifest.version = version;
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
 const versionPath = join(root, "lib", "version.ts");
-const ts = `// GENERATED FILE - do not edit. Regenerate with \`npm run build\`.\nexport const APP_VERSION = "${version}";\n`;
+const ts = `/* AI-CONTEXT-NOTE:{"R":"GENERATED file exposing APP_VERSION, stamped from package.json by scripts/stamp-version.mjs during production builds.","IDD":[{"?":"Never hand-edit; changes are overwritten on the next npm run build."},{"?":"package.json version field is the single source of truth."}],"A":[{"?":"SettingsView","reads APP_VERSION to display the running app version"}],"AB":[{"!!!":"scripts/stamp-version.mjs","rewrites this entire file on each production build"},{"?":"package.json","version value"}],"E":[{"!!":"npm run build regenerates file and APP_VERSION matches package.json"},{"*":"AI-CONTEXT-NOTE stays the first emitted line"}]} */\n// GENERATED FILE - do not edit. Regenerate with \`npm run build\`.\nexport const APP_VERSION = "${version}";\n`;
 writeFileSync(versionPath, ts);
 
 console.log(`[stamp-version] stamped v${version}`);
