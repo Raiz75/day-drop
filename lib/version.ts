@@ -1,3 +1,3 @@
 /* AI-CONTEXT-NOTE:{"R":"GENERATED file exposing APP_VERSION, stamped from package.json by scripts/stamp-version.mjs during production builds.","IDD":[{"?":"Never hand-edit; changes are overwritten on the next npm run build."},{"?":"package.json version field is the single source of truth."}],"A":[{"?":"SettingsView","reads APP_VERSION to display the running app version"}],"AB":[{"!!!":"scripts/stamp-version.mjs","rewrites this entire file on each production build"},{"?":"package.json","version value"}],"E":[{"!!":"npm run build regenerates file and APP_VERSION matches package.json"},{"*":"AI-CONTEXT-NOTE stays the first emitted line"}]} */
 // GENERATED FILE - do not edit. Regenerate with `npm run build`.
-export const APP_VERSION = "0.1.1";
+export const APP_VERSION = "1.1.1";
