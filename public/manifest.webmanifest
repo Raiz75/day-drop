@@ -9,11 +9,11 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/images/launcher-512.png",
+      "src": "/images/launchericon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
