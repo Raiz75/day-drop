@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateMonth, scoreEntry } from "@/lib/scoring";
+import { AURA_COST, pointsBalance, scoreEntry, totalPoints } from "@/lib/scoring";
 import type { DayEntry } from "@/lib/db/schema";
 
 const base: DayEntry = {
@@ -54,24 +54,16 @@ describe("scoreEntry", () => {
   });
 });
 
-describe("evaluateMonth", () => {
-  it("unlocks at >=80% with coverage", () => {
-    const perfect = { ...base };
-    const r = evaluateMonth([perfect], "2026-08");       // Aug has 31 days, need ceil(15.5)=16
-    expect(r.eligible).toBe(false);                      // 1 entry < 16
-    expect(r.unlocked).toBe(false);
+describe("aura points", () => {
+  it("totalPoints sums daily totals across entries", () => {
+    expect(totalPoints([])).toBe(0);
+    expect(totalPoints([base])).toBe(57);
+    expect(totalPoints([{ ...base, date: "2026-08-24" }, base])).toBe(114);
   });
-  it("coverage guard blocks thin months", () => {
-    const many = Array.from({ length: 20 }, (_, i) => ({
-      ...base, date: `2026-02-${String(i + 1).padStart(2, "0")}`,   // unique dates per entry
-    }));
-    const r = evaluateMonth(many, "2026-02");            // Feb: ceil(28*0.5)=14 <= 20 OK
-    expect(r.eligible).toBe(true);
-    expect(r.unlocked).toBe(r.ratio >= 0.8);
-  });
-  it("empty month is safe", () => {
-    const r = evaluateMonth([], "2026-08");
-    expect(r.score).toBe(0); expect(r.maxPossible).toBe(0); expect(r.ratio).toBe(0);
-    expect(r.unlocked).toBe(false);
+  it("pointsBalance subtracts 1500 per redemption", () => {
+    expect(pointsBalance([], 0)).toBe(0);
+    expect(pointsBalance([base], 0)).toBe(57);
+    expect(pointsBalance([base], 1)).toBe(-1443);
+    expect(AURA_COST).toBe(1500);
   });
 });

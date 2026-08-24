@@ -1,10 +1,9 @@
-/* AI-CONTEXT-NOTE:{"R":"Sole write path to IndexedDB: entries, habits, meta (drafts/rewards).","IDD":[{"?":"Every mutation is an exported async fn; components/hooks NEVER touch db.write directly."},{"?":"submitEntry runs atomically: entry upsert + draft clear + habit day-100 auto-archive."},{"!":"submitEntry stamps entries.activeHabitCount from its activeHabitIds arg - the per-day scoring snapshot"},{"?":"evaluateFinishedMonths is lazy grading called on app open; idempotent via final statuses."},{"?":"Day-100 archive is calendar-based: archivedAt set when entry.date == startedOn+99d."}],"A":[{"!!!":"lib/hooks/*.ts consume these; never call from inside useLiveQuery"},{"?":"components/journal/JournalWizard.tsx submit flow"},{"?":"components/settings/SettingsView.tsx import/export"}],"AB":[{"?":"lib/db/schema.ts"},{"?":"lib/scoring.ts evaluateMonth"},{"?":"lib/format.ts addDays/monthKeyOf"}],"E":[{"!!":"tests/repository.test.ts"},{"!!":"npm run build"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Sole write path to IndexedDB: entries, habits, meta (drafts/aura).","IDD":[{"?":"Every mutation is an exported async fn; components/hooks NEVER touch db.write directly."},{"?":"submitEntry runs atomically: entry upsert + draft clear + habit day-100 auto-archive."},{"!":"submitEntry stamps entries.activeHabitCount from its activeHabitIds arg - the per-day scoring snapshot"},{"?":"redeemAura appends an aura:<uuid> meta row; balance math lives in lib/scoring.pointsBalance"},{"?":"Day-100 archive is calendar-based: archivedAt set when entry.date == startedOn+99d."}],"A":[{"!!!":"lib/hooks/*.ts consume these; never call from inside useLiveQuery"},{"?":"components/journal/JournalWizard.tsx submit flow"},{"?":"components/dashboard/DashboardView.tsx redeem flow"}],"AB":[{"?":"lib/db/schema.ts"},{"?":"lib/format.ts addDays/todayStr"}],"E":[{"!!":"tests/repository.test.ts"},{"!!":"npm run build"},{"!!":"redeemAura writes exactly one row per call"}]} */
 import {
-  db, DRAFT_KEY, newId, rewardKey,
-  type DayEntry, type Habit, type JournalDraft, type RewardRecord, type RewardStatus,
+  db, DRAFT_KEY, newId, auraKey,
+  type DayEntry, type Habit, type JournalDraft,
 } from "@/lib/db/schema";
-import { addDays, monthKeyOf, todayStr } from "@/lib/format";
-import { evaluateMonth } from "@/lib/scoring";
+import { addDays, todayStr } from "@/lib/format";
 
 // Dexie emulates null-index queries but its IndexableType excludes null.
 
@@ -76,49 +75,6 @@ export function getArchivedHabits(): Promise<Habit[]> {
   return db.habits.filter((h) => h.archivedAt !== null).toArray();
 }
 
-const FINAL: RewardStatus[] = ["earned", "missed", "claimed"];
-
-export function getReward(month: string) {
-  return getMeta<RewardRecord>(rewardKey(month));
-}
-
-export async function setMonthlyReward(month: string, text: string): Promise<void> {
-  const existing = await getReward(month);
-  const status: RewardStatus =
-    existing && FINAL.includes(existing.status) ? existing.status : existing?.status === "pending" || !existing ? "active" : existing.status;
-  await putMeta(rewardKey(month), { ...(existing ?? { month }), month, text, status } satisfies RewardRecord);
-}
-
-export async function claimReward(month: string): Promise<void> {
-  const existing = await getReward(month);
-  if (existing?.status !== "earned") return;
-  await putMeta(rewardKey(month), { ...existing, status: "claimed" } satisfies RewardRecord);
-}
-
-export async function evaluateFinishedMonths(
-  today: string,
-): Promise<{ month: string; unlocked: boolean }[]> {
-  const results: { month: string; unlocked: boolean }[] = [];
-  const all = await db.entries.toArray();
-  const months = new Set(all.map((e) => monthKeyOf(e.date)));
-  const currentMonth = monthKeyOf(today);
-  for (const month of months) {
-    if (month >= currentMonth) continue;
-    const existing = await getReward(month);
-    if (existing && FINAL.includes(existing.status)) continue;
-    const monthEntries = all.filter((e) => monthKeyOf(e.date) === month);
-    const evaluation = evaluateMonth(monthEntries, month);
-    const status: RewardStatus = evaluation.unlocked ? "earned" : "missed";
-    const record: RewardRecord = {
-      month,
-      text: existing?.text ?? null,
-      status,
-      score: evaluation.score,
-      maxPossible: evaluation.maxPossible,
-      ratio: evaluation.ratio,
-    };
-    await putMeta(rewardKey(month), record);
-    results.push({ month, unlocked: evaluation.unlocked });
-  }
-  return results;
+export async function redeemAura(): Promise<void> {
+  await putMeta(auraKey(newId()), { at: new Date().toISOString() });
 }

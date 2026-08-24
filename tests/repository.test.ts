@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Vitest tests for lib/db/repository.ts — draft save/get/clear round-trip, same-day entry overwrite, submit-clears-draft, habit day-100 calendar auto-archive, rename/delete habits, reward set/claim lifecycle, and evaluateFinishedMonths grading + idempotence. Uses an in-memory mock of the Dexie db (vi.mock of schema.ts) so no IndexedDB is needed.","IDD":[{"?":"vi.hoisted store objects implement only the Dexie surface repository.ts uses; extend the mock when a new repository fn needs a missing op, keeping real-Dexie semantics"},{"?":"db.transaction('rw',...) mock invokes the callback so atomic rw logic inside submitEntry runs"},{"?":"Mock put keys by date(key)/key(meta)/id(habits) mirroring each table's primary key"},{"?":"newId/types kept real via importOriginal; only db is replaced"}],"A":[{"!!!":"lib/db/repository.ts","CRITICAL":"sole writer exercised here - day-100 archive, draft clear, month grading must not regress"},{"?":"components/journal/JournalWizard.tsx","submit flow consumes archivedHabits result"},{"?":"components/settings/SettingsView.tsx","import/export goes through repository"}],"AB":[{"?":"tests/repository.test.ts in cash-guard repo","source of the mock-table helper pattern"},{"?":"vitest.config.mts","tsconfigPaths @ alias + happy-dom"},{"?":"lib/scoring.ts","evaluateMonth thresholds pin earned/missed outcomes"}],"E":[{"!!!":"npm test -- repository","must pass before any repository change merges"},{"!!":"resubmitting same date overwrites exactly one row"},{"!!":"claimReward only transitions earned->claimed"},{"*":"evaluateFinishedMonths second call returns [] (idempotent)"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Vitest tests for lib/db/repository.ts — draft save/get/clear round-trip, same-day entry overwrite, submit-clears-draft, habit day-100 calendar auto-archive, rename/delete habits, and redeemAura (one aura:<uuid> row per call). Uses an in-memory mock of the Dexie db (vi.mock of schema.ts) so no IndexedDB is needed.","IDD":[{"?":"vi.hoisted store objects implement only the Dexie surface repository.ts uses; extend the mock when a new repository fn needs a missing op, keeping real-Dexie semantics"},{"?":"db.transaction('rw',...) mock invokes the callback so atomic rw logic inside submitEntry runs"},{"?":"Mock put keys by date(key)/key(meta)/id(habits) mirroring each table's primary key"},{"?":"newId/types kept real via importOriginal; only db is replaced"}],"A":[{"!!!":"lib/db/repository.ts","CRITICAL":"sole writer exercised here - day-100 archive, draft clear, redeemAura must not regress"},{"?":"components/journal/JournalWizard.tsx","submit flow consumes archivedHabits result"},{"?":"components/settings/SettingsView.tsx","import/export goes through repository"}],"AB":[{"?":"tests/repository.test.ts in cash-guard repo","source of the mock-table helper pattern"},{"?":"vitest.config.mts","tsconfigPaths @ alias + happy-dom"}],"E":[{"!!!":"npm test -- repository","must pass before any repository change merges"},{"!!":"resubmitting same date overwrites exactly one row"},{"!!":"redeemAura writes exactly one aura:<uuid> meta row per call"}]} */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockDb } = vi.hoisted(() => {
@@ -63,9 +63,9 @@ vi.mock("@/lib/db/schema", async (importOriginal) => {
 });
 
 import {
-  addHabit, claimReward, clearDraft, deleteHabit, evaluateFinishedMonths,
-  getDraft, getLatestEntryBefore, getTodayEntry, renameHabit, saveDraft,
-  setMonthlyReward, submitEntry,
+  addHabit, clearDraft, deleteHabit,
+  getDraft, getLatestEntryBefore, getTodayEntry, redeemAura, renameHabit, saveDraft,
+  submitEntry,
 } from "@/lib/db/repository";
 
 const TODAY = "2026-08-23";
@@ -141,28 +141,15 @@ describe("habits", () => {
   });
 });
 
-describe("monthly rewards", () => {
-  it("set/claim lifecycle", async () => {
-    await setMonthlyReward("2026-08", "buy a game");
-    await claimReward("2026-08"); // not yet evaluated -> no-op safe
-    // simulate evaluation result
-    await setMonthlyReward("2026-07", "dinner out");
-    await mockDb.meta.put({ key: "reward:2026-07", value: { month: "2026-07", text: "dinner out", status: "earned" } });
-    await claimReward("2026-07");
-    expect(((await mockDb.meta.get("reward:2026-07"))!.value as { status: string }).status).toBe("claimed");
-  });
-
-  it("evaluateFinishedMonths grades past month once", async () => {
-    // 16 perfect entries in July 2026 -> eligible + ratio high
-    for (let d = 1; d <= 16; d++) {
-      const date = `2026-07-${String(d).padStart(2, "0")}`;
-      await submitEntry(fullEntry(date), []);
-    }
-    const res = await evaluateFinishedMonths("2026-08-01");
-    expect(res).toContainEqual({ month: "2026-07", unlocked: true });
-    const rec = (await mockDb.meta.get("reward:2026-07"))!.value as { status: string };
-    expect(rec.status).toBe("earned"); // even without preset text, earned is recorded
-    // idempotent
-    expect(await evaluateFinishedMonths("2026-08-01")).toHaveLength(0);
+describe("redeemAura", () => {
+  it("writes one aura:<id> meta row per call with an ISO timestamp", async () => {
+    await redeemAura();
+    let rows = [...mockDb.meta.__map.values()];
+    expect(rows).toHaveLength(1);
+    expect(String(rows[0].key)).toMatch(/^aura:[0-9a-f-]{36}$/);
+    expect(new Date((rows[0].value as { at: string }).at).toString()).not.toBe("Invalid Date");
+    await redeemAura();
+    rows = [...mockDb.meta.__map.values()];
+    expect(rows).toHaveLength(2);
   });
 });

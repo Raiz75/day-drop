@@ -1,8 +1,9 @@
-/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, reward banner, heatmap calendar, streak chips, 30-day trend, DayDetailSheet for picked days, Fab + JournalWizard mount, BottomNav.","IDD":[{"?":"evaluateFinishedMonths runs once per app open, guarded by a ref, fire-and-forget with catch - grading past months lazily."},{"?":"Reward record read via useMetaValue(rewardKey(currentMonth)); month score/count derived from current-month entries inside RewardBanner."},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration effect mounts here in production only; public/sw.js + public/manifest.webmanifest back it."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes monthEntries + rewardRecord this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DayDetailSheet"}],"AB":[{"?":"lib/hooks/useEntries.ts + useMeta.ts"},{"?":"lib/db/repository.ts evaluateFinishedMonths"},{"?":"lib/streaks.ts allStreaks"},{"?":"lib/db/schema.ts rewardKey/RewardRecord"},{"?":"components/journal/JournalWizard.tsx"},{"?":"components/shared/BottomNav.tsx fixed height dictates pb-20 shell padding"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> flame=1, heatmap today colored, chips populated, trend point, tap today opens sheet; pencil FAB prefills wizard"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, aura banner, heatmap calendar, streak chips, 30-day trend, DayDetailSheet for picked days, Fab + JournalWizard mount, BottomNav.","IDD":[{"?":"balance = pointsBalance(all entries, auraCount) recomputed live - never stored"},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration effect mounts here in production only; public/sw.js + public/manifest.webmanifest back it."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes balance/auraCount/onRedeem this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DayDetailSheet"}],"AB":[{"?":"lib/hooks/useEntries.ts + useAura.ts"},{"?":"lib/db/repository.ts redeemAura"},{"?":"lib/scoring.ts pointsBalance"},{"?":"lib/streaks.ts allStreaks"},{"?":"components/journal/JournalWizard.tsx"},{"?":"components/shared/BottomNav.tsx fixed height dictates pb-20 shell padding"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> banner X/1500 grows; at 1500 'Reward self' -> +1 aura toast"}]} */
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { IconFlame } from "@tabler/icons-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Fab } from "@/components/shared/Fab";
 import { Header } from "@/components/shared/Header";
@@ -14,15 +15,13 @@ import { HeatmapCalendar } from "./HeatmapCalendar";
 import { StreakChips, type Streaks } from "./StreakChips";
 import { TrendChart } from "./TrendChart";
 import { DayDetailSheet } from "./DayDetailSheet";
-import { todayStr, fromStr, monthKeyOf } from "@/lib/format";
-import {
-  evaluateFinishedMonths,
-} from "@/lib/db/repository";
+import { todayStr, fromStr } from "@/lib/format";
+import { redeemAura } from "@/lib/db/repository";
 import { useEntries } from "@/lib/hooks/useEntries";
-import { useMetaValue } from "@/lib/hooks/useMeta";
+import { useAuraRecords } from "@/lib/hooks/useAura";
 import { useStorageAvailable } from "@/lib/hooks/useHydrated";
 import { allStreaks } from "@/lib/streaks";
-import { rewardKey, type RewardRecord } from "@/lib/db/schema";
+import { pointsBalance } from "@/lib/scoring";
 
 const ZERO_STREAKS = {
   journal: 0, health: 0, steps: 0, workout: 0,
@@ -32,15 +31,9 @@ const ZERO_STREAKS = {
 export function DashboardView() {
   const storage = useStorageAvailable();
   const entries = useEntries();
+  const auraRecords = useAuraRecords();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
-  const evaluated = useRef(false);
-
-  useEffect(() => {
-    if (evaluated.current) return;
-    evaluated.current = true;
-    void evaluateFinishedMonths(todayStr()).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
@@ -49,8 +42,6 @@ export function DashboardView() {
   }, []);
 
   const today = todayStr();
-  const month = monthKeyOf(today);
-  const rewardRecord = useMetaValue<RewardRecord>(rewardKey(month));
 
   const streaks = useMemo<Streaks>(
     () => (entries ? allStreaks(entries, today) : ZERO_STREAKS),
@@ -61,7 +52,13 @@ export function DashboardView() {
   if (storage === null) return null;
 
   const list = entries ?? [];
-  const monthEntries = list.filter((e) => monthKeyOf(e.date) === month);
+  const auraCount = auraRecords?.length ?? 0;
+  const balance = entries ? pointsBalance(list, auraCount) : undefined;
+  const handleRedeem = () => {
+    void redeemAura()
+      .then(() => toast.success("+1 aura"))
+      .catch(() => {});
+  };
   const pickedEntry = pickedDate
     ? list.find((e) => e.date === pickedDate) ?? null
     : null;
@@ -80,7 +77,7 @@ export function DashboardView() {
             <span className="tabular-nums">{streaks.journal}</span>
           </Badge>
         </div>
-        <RewardBanner month={month} record={rewardRecord} monthEntries={monthEntries} />
+        <RewardBanner balance={balance} auraCount={auraCount} onRedeem={handleRedeem} />
         <HeatmapCalendar entries={list} onPickDay={setPickedDate} />
         <StreakChips streaks={streaks} />
         <TrendChart entries={list} />

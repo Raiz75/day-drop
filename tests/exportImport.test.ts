@@ -52,20 +52,31 @@ beforeEach(() => {
 });
 
 describe("exportImport", () => {
-  it("round-trips a backup", () => {
-    const backup = buildBackup([entry], [], []);
+  const aura = [{ id: "a1", at: "2026-08-23T10:00:00.000Z" }];
+
+  it("round-trips entries, habits and aura", () => {
+    const backup = buildBackup([entry], [], aura);
     const parsed = parseBackup(JSON.stringify(backup));
     expect(parsed.ok).toBe(true);
-    if (parsed.ok) expect(parsed.data.entries[0].date).toBe("2026-08-23");
+    if (parsed.ok) {
+      expect(parsed.data.entries[0].date).toBe("2026-08-23");
+      expect(parsed.data.aura[0]).toEqual(aura[0]);
+    }
   });
-  it("rejects garbage", () => {
+  it("rejects garbage and legacy v1 backups", () => {
     expect(parseBackup("{not json").ok).toBe(false);
     expect(parseBackup(JSON.stringify({ app: "other" })).ok).toBe(false);
+    const legacy = { app: "day-drop", version: 1, exportedAt: "t", entries: [], habits: [], rewards: [] };
+    expect(parseBackup(JSON.stringify(legacy)).ok).toBe(false);
   });
-  it("merge skips duplicates and counts", async () => {
+  it("merge skips duplicates and counts auras", async () => {
     await mockDb.entries.put(entry as unknown as Parameters<typeof mockDb.entries.put>[0]);
-    const res = await mergeBackup({ ...buildBackup([entry, { ...entry, date: "2026-08-24" }], [], []), });
+    await mockDb.meta.put({ key: "aura:a1", value: { at: aura[0].at } });
+    const res = await mergeBackup(buildBackup([entry, { ...entry, date: "2026-08-24" }], [], aura));
     expect(res.importedEntries).toBe(1);
     expect(res.skippedEntries).toBe(1);
+    expect(res.importedAura).toBe(0);
+    const res2 = await mergeBackup(buildBackup([], [], [{ ...aura[0], id: "a2" }]));
+    expect(res2.importedAura).toBe(1);
   });
 });

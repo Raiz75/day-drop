@@ -1,12 +1,11 @@
-/* AI-CONTEXT-NOTE:{"R":"Pure scoring engine: per-metric 1-10 daily scores, daily total (max 70), monthly reward evaluation.","IDD":[{"?":"Never returns 0 for a scored metric (floor 1) per spec."},{"?":"Workout sums option points capped at 10."},{"?":"Sleep bands: [7,9]=10, [6,7)/(9,10]=7, [5,6)/(10,11]=4, else 2."},{"!":"Habit total precedence: explicit arg > entry.activeHabitCount (when >0; v1 rows lack it) > checked.length"},{"?":"Monthly unlock needs ratio>=0.8 AND coverage>=ceil(daysInMonth*0.5)."}],"A":[{"!!!":"lib/journal/steps.ts","CRITICAL":"option ids and tierScores arrays are consumed positionally"},{"?":"lib/streaks.ts threshold"},{"?":"components/dashboard/RewardBanner.tsx"},{"?":"lib/db/repository.ts lazy month evaluation"}],"AB":[{"?":"lib/format.ts sleepHours/daysInMonth"}],"E":[{"!!":"tests/scoring.test.ts"},{"?":"Tuning point values: edit STEPS options/tierScores, not this file"}]} */
-import { sleepHours, daysInMonth } from "@/lib/format";
+/* AI-CONTEXT-NOTE:{"R":"Pure scoring engine: per-metric 1-10 daily scores, daily total (max 70), lifetime aura-points balance (1500 pts per redemption).","IDD":[{"?":"Never returns 0 for a scored metric (floor 1) per spec."},{"?":"Workout sums option points capped at 10."},{"?":"Sleep bands: [7,9]=10, [6,7)/(9,10]=7, [5,6)/(10,11]=4, else 2."},{"!":"Habit total precedence: explicit arg > entry.activeHabitCount (when >0; v1 rows lack it) > checked.length"},{"!":"evaluateMonth/monthScore removed in full wipe - old reward:* meta rows are inert"},{"?":"pointsBalance derives from entries live - never stored"}],"A":[{"!!!":"lib/journal/steps.ts","CRITICAL":"option ids and tierScores arrays are consumed positionally"},{"?":"lib/streaks.ts threshold"},{"?":"components/dashboard/RewardBanner.tsx + DashboardView.tsx consume AURA_COST/pointsBalance"},{"?":"lib/db/repository.ts"}],"AB":[{"?":"lib/format.ts sleepHours"}],"E":[{"!!":"tests/scoring.test.ts"},{"?":"Tuning point values: edit STEPS options/tierScores, not this file"}]} */
+import { sleepHours } from "@/lib/format";
 import { stepById } from "@/lib/journal/steps";
 import type { DayEntry } from "@/lib/db/schema";
 
 export const GOOD_SCORE_THRESHOLD = 7;
 export const MAX_METRIC_SCORE = 10;
 export const METRIC_COUNT = 7;
-export const MIN_MONTH_COVERAGE_RATIO = 0.5;
 
 export type MetricKey =
   | "health" | "steps" | "workout" | "screenTime" | "reading" | "sleep" | "habits";
@@ -58,21 +57,12 @@ export function scoreEntry(
   return { health, steps, workout, screenTime, reading, sleep, habits, total };
 }
 
-export function monthScore(entries: DayEntry[], activeHabitCountByDate?: Map<string, number>): number {
-  return entries.reduce(
-    (sum, e) => sum + scoreEntry(e, activeHabitCountByDate?.get(e.date)).total,
-    0,
-  );
+export const AURA_COST = 1500;
+
+export function totalPoints(entries: DayEntry[]): number {
+  return entries.reduce((sum, e) => sum + scoreEntry(e).total, 0);
 }
 
-export function evaluateMonth(entries: DayEntry[], monthKey: string): {
-  score: number; maxPossible: number; ratio: number; eligible: boolean; unlocked: boolean;
-} {
-  const score = monthScore(entries);
-  const maxPossible = entries.length * MAX_METRIC_SCORE * METRIC_COUNT;
-  const ratio = maxPossible === 0 ? 0 : score / maxPossible;
-  const [year, monthIdx0] = monthKey.split("-").map(Number);
-  const needed = Math.ceil(daysInMonth(year, monthIdx0 - 1) * MIN_MONTH_COVERAGE_RATIO);
-  const eligible = entries.length >= needed;
-  return { score, maxPossible, ratio, eligible, unlocked: eligible && ratio >= 0.8 };
+export function pointsBalance(entries: DayEntry[], redeemedCount: number): number {
+  return totalPoints(entries) - AURA_COST * redeemedCount;
 }

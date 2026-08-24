@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Dexie database definition and ALL persisted types for DayDrop.","IDD":[{"?":"date 'YYYY-MM-DD' is the entries primary key -> one entry per day."},{"?":"Meta rows are namespaced single-key documents: draft, reward:YYYY-MM, celebrated:<habitId>."},{"!":"v2 adds DayEntry.activeHabitCount snapshot (active habits at submit time); v1 rows lack the field and habit scoring falls back to checked length"},{"?":"Versioned additive migrations only; never edit an existing store shape in place."}],"A":[{"!!!":"lib/db/repository.ts","CRITICAL":"repository is the ONLY writer; hooks read via useLiveQuery"},{"?":"lib/scoring.ts consumes DayEntry"},{"?":"components/journal/** consume StepId-typed fields"}],"AB":[{"?":"dexie"},{"?":"uuid"}],"E":[{"!!":"tests/schema.test.ts"},{"!!":"npm run build"},{"*":"version(2) stores strings must stay identical to version(1) - identical declaration = no-op upgrade"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Dexie database definition and ALL persisted types for DayDrop.","IDD":[{"?":"date 'YYYY-MM-DD' is the entries primary key -> one entry per day."},{"?":"Meta rows are namespaced single-key documents: draft, aura:<uuid>, celebrated:<habitId> (legacy reward:* rows inert)."},{"!":"v2 adds DayEntry.activeHabitCount snapshot (active habits at submit time); v1 rows lack the field and habit scoring falls back to checked length"},{"?":"Versioned additive migrations only; never edit an existing store shape in place."}],"A":[{"!!!":"lib/db/repository.ts","CRITICAL":"repository is the ONLY writer; hooks read via useLiveQuery"},{"?":"lib/scoring.ts consumes DayEntry"},{"?":"components/journal/** consume StepId-typed fields"}],"AB":[{"?":"dexie"},{"?":"uuid"}],"E":[{"!!":"tests/schema.test.ts"},{"!!":"npm run build"},{"*":"version(2) stores strings must stay identical to version(1) - identical declaration = no-op upgrade"}]} */
 import Dexie, { type Table } from "dexie";
 import { v4 as uuidv4 } from "uuid";
 
@@ -35,15 +35,8 @@ export interface Habit {
   archivedAt: string | null;
 }
 
-export type RewardStatus = "pending" | "active" | "earned" | "missed" | "claimed";
-
-export interface RewardRecord {
-  month: string;
-  text: string | null;
-  status: RewardStatus;
-  score?: number;
-  maxPossible?: number;
-  ratio?: number;
+export interface AuraRecord {
+  at: string;
 }
 
 export interface JournalDraft {
@@ -55,7 +48,7 @@ export interface JournalDraft {
 export interface MetaRow { key: string; value: unknown }
 
 export const DRAFT_KEY = "journal-draft";
-export function rewardKey(month: string): string { return `reward:${month}`; }
+export function auraKey(id: string): string { return `aura:${id}`; }
 export function celebratedKey(habitId: string): string { return `celebrated:${habitId}`; }
 
 export class DayDropDB extends Dexie {
