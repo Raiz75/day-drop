@@ -1,24 +1,34 @@
-/* AI-CONTEXT-NOTE:{"R":"JSON backup build/parse/merge for settings import-export.","IDD":[{"?":"Strict zod validation before touching the DB; duplicates by primary key are skipped."},{"!":"v2 format dropped rewards entirely - v1 backups reject as unrecognized (full-wipe decision)"},{"?":"Aura rows restore as aura:<id> meta entries; entrySchema keeps activeHabitCount optional so v1-era rows import"}],"A":[{"?":"components/settings/SettingsView.tsx"}],"AB":[{"?":"zod"},{"?":"lib/db/schema.ts"},{"?":"lib/db/repository.ts is NOT used here - direct db writes in one transaction"}],"E":[{"!!":"tests/exportImport.test.ts"},{"?":"Never partially import: wrap merge in db.transaction"}]} */
+/* AI-CONTEXT-NOTE:{"R":"JSON backup build/parse/merge for settings import-export.","IDD":[{"?":"Strict zod validation before touching the DB; duplicates by primary key are skipped."},{"!":"v3 format uses new DayEntry schema - v2 backups rejected as unrecognized (full-wipe decision)"},{"?":"Aura rows restore as aura:<id> meta entries; activeHabitCount defaults to 0 on import"}],"A":[{"?":"components/settings/SettingsView.tsx"}],"AB":[{"?":"zod"},{"?":"lib/db/schema.ts"},{"?":"lib/db/repository.ts is NOT used here - direct db writes in one transaction"}],"E":[{"!!":"tests/exportImport.test.ts"},{"?":"Never partially import: wrap merge in db.transaction"}]} */
 import { z } from "zod";
 import { db, type DayEntry, type Habit } from "@/lib/db/schema";
 
 const checklistItemSchema = z.object({ text: z.string(), done: z.boolean() });
 
 const entrySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  work: z.string(), health: z.string(), weather: z.array(z.string()),
-  stepsTier: z.number().int().min(0).max(6),
-  workouts: z.array(z.string()),
-  screenTimeTier: z.number().int().min(0).max(7),
-  readingTier: z.number().int().min(0).max(6),
-  sleptAt: z.string(), wokeAt: z.string(), mood: z.string(),
-  highlight: z.string(), improve: z.string(), grateful: z.string(),
-  todayTasks: z.array(checklistItemSchema),
-  tomorrowPlan: z.array(z.string()),
-  bucketList: z.string().nullable(),
+  date: z.string(),
+  sleepDuration: z.number(),
+  exercise: z.string(),
+  nutrition: z.array(z.string()),
+  hydration: z.number(),
+  timeOutdoor: z.number(),
+  physicalFeeling: z.string(),
+  moodCheck: z.string(),
+  reading: z.string(),
+  highlights: z.string(),
+  couldHaveBeenBetter: z.string(),
+  storyOfTheDay: z.string().nullable(),
+  familyTime: z.boolean(),
+  conversations: z.boolean(),
+  kindnessActs: z.boolean(),
+  connectionStatus: z.string(),
+  learnedToday: z.string(),
+  tasksFinished: z.string(),
+  deepWorkHours: z.number(),
+  workFeeling: z.string(),
   habitsChecked: z.array(z.string()),
   activeHabitCount: z.number().optional(),
-  createdAt: z.number(), updatedAt: z.number(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
 });
 
 const habitSchema = z.object({
@@ -31,7 +41,7 @@ export interface BackupAura { id: string; at: string }
 
 const backupSchema = z.object({
   app: z.literal("day-drop"),
-  version: z.number(),
+  version: z.literal(3),
   exportedAt: z.string(),
   entries: z.array(entrySchema),
   habits: z.array(habitSchema),
@@ -44,7 +54,7 @@ export function buildBackup(
   entries: DayEntry[], habits: Habit[], aura: BackupAura[],
 ): BackupFile {
   return {
-    app: "day-drop", version: 2, exportedAt: new Date().toISOString(),
+    app: "day-drop", version: 3, exportedAt: new Date().toISOString(),
     entries, habits, aura,
   };
 }

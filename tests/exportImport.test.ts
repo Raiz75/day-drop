@@ -38,11 +38,30 @@ import { buildBackup, mergeBackup, parseBackup } from "@/lib/exportImport";
 import type { DayEntry } from "@/lib/db/schema";
 
 const entry: DayEntry = {
-  date: "2026-08-23", work: "fun", health: "healthy", weather: [], stepsTier: 3,
-  workouts: [], screenTimeTier: 2, readingTier: 2, sleptAt: "22:30", wokeAt: "06:30",
-  mood: "happy", highlight: "x".repeat(25), improve: "y".repeat(25), grateful: "z".repeat(25),
-  todayTasks: [], tomorrowPlan: ["a"], bucketList: null, habitsChecked: [],
-  activeHabitCount: 0, createdAt: 1, updatedAt: 1,
+  date: "2026-08-23",
+  sleepDuration: 7,
+  exercise: "medium",
+  nutrition: ["meat", "vegetables"],
+  hydration: 2,
+  timeOutdoor: 1,
+  physicalFeeling: "healthy",
+  moodCheck: "happy",
+  reading: "decent",
+  highlights: "x".repeat(50),
+  couldHaveBeenBetter: "y".repeat(50),
+  storyOfTheDay: null,
+  familyTime: true,
+  conversations: true,
+  kindnessActs: false,
+  connectionStatus: "connected",
+  learnedToday: "learned about testing".repeat(2),
+  tasksFinished: "finished tasks".repeat(2),
+  deepWorkHours: 2,
+  workFeeling: "productive",
+  habitsChecked: [],
+  activeHabitCount: 0,
+  createdAt: 1,
+  updatedAt: 1,
 };
 
 beforeEach(() => {

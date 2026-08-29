@@ -7,13 +7,32 @@ import {
 } from "@/lib/db/repository";
 import { db } from "@/lib/db/schema";
 
-function fullEntry(date: string, tomorrowPlan: string[] = ["ship"]) {
+function fullEntry(date: string) {
   return {
-    date, work: "fun", health: "healthy", weather: [], stepsTier: 3,
-    workouts: [], screenTimeTier: 2, readingTier: 2, sleptAt: "22:30", wokeAt: "06:30",
-    mood: "happy", highlight: "x".repeat(25), improve: "y".repeat(25), grateful: "z".repeat(25),
-    todayTasks: [], tomorrowPlan, bucketList: null, habitsChecked: [],
-    activeHabitCount: 0, createdAt: 1, updatedAt: 1,
+    date,
+    sleepDuration: 7,
+    exercise: "medium",
+    nutrition: ["meat", "vegetables"],
+    hydration: 2,
+    timeOutdoor: 1,
+    physicalFeeling: "healthy",
+    moodCheck: "happy",
+    reading: "decent",
+    highlights: "x".repeat(50),
+    couldHaveBeenBetter: "y".repeat(50),
+    storyOfTheDay: null,
+    familyTime: true,
+    conversations: true,
+    kindnessActs: false,
+    connectionStatus: "connected",
+    learnedToday: "learned about testing".repeat(2),
+    tasksFinished: "finished tasks".repeat(2),
+    deepWorkHours: 2,
+    workFeeling: "productive",
+    habitsChecked: [],
+    activeHabitCount: 0,
+    createdAt: 1,
+    updatedAt: 1,
   };
 }
 
@@ -47,7 +66,7 @@ describe("real dexie integration (fake-indexeddb)", () => {
   it("entry roundtrip through real indexeddb", async () => {
     await submitEntry(fullEntry("2026-08-23"), []);
     const e = await getTodayEntry("2026-08-23");
-    expect(e?.tomorrowPlan).toEqual(["ship"]);
+    expect(e?.date).toBe("2026-08-23");
     expect(e?.activeHabitCount).toBe(0);
   });
 
