@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"zod-backed validation for each wizard step; wizard Next button gates on validateStep.","IDD":[{"?":"Dispatches on StepDef.type; option id membership comes live from STEPS config."},{"?":"Sleep window clamps: sleptAt 20:00-23:59, wokeAt 00:00-10:00."},{"?":"Optional text steps (bucketList) allow empty and normalize to null upstream."}],"A":[{"?":"components/journal/JournalWizard.tsx canAdvance"},{"?":"lib/exportImport.ts full-entry validation"}],"AB":[{"?":"zod"},{"?":"lib/journal/steps.ts"}],"E":[{"!!":"tests/validations-journal.test.ts"}]} */
+/* AI-CONTEXT-NOTE:{"R":"zod-backed validation for each wizard step AND full DayEntry schema; wizard Next button gates on validateStep, exportImport uses dayEntrySchema.","IDD":[{"?":"Dispatches on StepDef.type; option id membership comes live from STEPS config."},{"?":"Sleep window clamps: sleptAt 20:00-23:59, wokeAt 00:00-10:00."},{"!":"dayEntrySchema matches DayEntry in lib/db/schema.ts exactly."},{"?":"Optional text steps (bucketList) allow empty and normalize to null upstream."}],"A":[{"?":"components/journal/JournalWizard.tsx canAdvance"},{"!!":"lib/exportImport.ts full-entry validation"}],"AB":[{"?":"zod"},{"?":"lib/journal/steps.ts"},{"?":"lib/db/schema.ts DayEntry"}],"E":[{"!!":"tests/validations-journal.test.ts"},{"!!":"npm run build"}]} */
 import { z } from "zod";
 import type { StepDef } from "@/lib/journal/steps";
 
@@ -59,3 +59,38 @@ export function validateStep(
     }
   }
 }
+
+export const dayEntrySchema = z.object({
+  date: z.string(),
+  // Physical Well-being
+  sleepDuration: z.number().int().min(0).max(5),
+  exercise: z.enum(["light", "medium", "heavy"]),
+  nutrition: z.array(z.enum(["meat", "vegetables", "fruit"])).min(1),
+  hydration: z.number().int().min(0).max(3),
+  timeOutdoor: z.number().int().min(0).max(3),
+  physicalFeeling: z.enum(["unwell", "okay", "healthy", "energetic"]),
+  // Mental & Emotional
+  moodCheck: z.enum(["happy", "energetic", "okay", "bored", "tired", "anxious", "sad", "angry", "lonely"]),
+  reading: z.enum(["none", "a-bit", "decent", "a-lot", "on-a-roll", "bookworm"]),
+  highlights: z.string().min(50),
+  couldHaveBeenBetter: z.string().min(50),
+  storyOfTheDay: z.string().nullable(),
+  // Relationship Well-being
+  familyTime: z.boolean(),
+  conversations: z.boolean(),
+  kindnessActs: z.boolean(),
+  connectionStatus: z.enum(["connected", "neutral", "lonely"]),
+  // Work & Productivity
+  learnedToday: z.string().min(20),
+  tasksFinished: z.string().min(20),
+  deepWorkHours: z.number().int().min(0).max(4),
+  workFeeling: z.enum(["focused", "scattered", "productive", "drained"]),
+  // Habits
+  habitsChecked: z.array(z.string()),
+  activeHabitCount: z.number().int().min(0),
+  // Meta
+  createdAt: z.number(),
+  updatedAt: z.number(),
+});
+
+export type DayEntryInput = z.infer<typeof dayEntrySchema>;
