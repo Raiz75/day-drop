@@ -71,14 +71,16 @@ import {
 const TODAY = "2026-08-23";
 
 function fullEntry(date: string): Parameters<typeof submitEntry>[0] {
-  // maxes all 7 metrics: health 10, steps tier 6->10, workouts run+sports capped 10,
-  // screenTime tier 0->10, reading tier 6->10, sleep 8h->10, habits 1/1 checked->10
   return {
-    date, work: "fun", health: "healthy", weather: [], stepsTier: 6, workouts: ["run", "sports"],
-    screenTimeTier: 0, readingTier: 6, sleptAt: "22:30", wokeAt: "06:30", mood: "happy",
-    highlight: "x".repeat(25), improve: "y".repeat(25), grateful: "z".repeat(25),
-    todayTasks: [], tomorrowPlan: ["ship"], bucketList: null, habitsChecked: ["any"],
-    activeHabitCount: 1, createdAt: 1, updatedAt: 1,
+    date,
+    sleepDuration: 2, exercise: "heavy", nutrition: ["home-cooked", "protein", "veggies"],
+    hydration: 3, timeOutdoor: 2, physicalFeeling: "energetic",
+    moodCheck: "happy", reading: "bookworm", highlights: "x".repeat(25),
+    couldHaveBeenBetter: "y".repeat(25), storyOfTheDay: "z".repeat(25),
+    familyTime: true, conversations: true, kindnessActs: true, connectionStatus: "connected",
+    learnedToday: "a".repeat(10), tasksFinished: "b".repeat(10),
+    deepWorkHours: 4, workFeeling: "focused",
+    habitsChecked: ["any"], activeHabitCount: 1, createdAt: 1, updatedAt: 1,
   };
 }
 
@@ -90,7 +92,7 @@ beforeEach(() => {
 
 describe("drafts", () => {
   it("save/get/clear round-trip", async () => {
-    await saveDraft({ date: TODAY, stepIndex: 2, answers: { work: "fun" } });
+    await saveDraft({ date: TODAY, stepIndex: 2, answers: { moodCheck: "happy" } });
     expect(await getDraft()).toMatchObject({ stepIndex: 2 });
     await clearDraft();
     expect(await getDraft()).toBeUndefined();
@@ -110,10 +112,10 @@ describe("entries", () => {
   });
   it("resubmitting today overwrites (same-day edit)", async () => {
     await submitEntry(fullEntry(TODAY), []);
-    await submitEntry({ ...fullEntry(TODAY), mood: "tired" }, []);
+    await submitEntry({ ...fullEntry(TODAY), moodCheck: "tired" }, []);
     const rows = [...mockDb.entries.__map.values()];
     expect(rows).toHaveLength(1);
-    expect(rows[0].mood).toBe("tired");
+    expect(rows[0].moodCheck).toBe("tired");
   });
   it("submit clears the draft", async () => {
     await saveDraft({ date: TODAY, stepIndex: 5, answers: {} });
