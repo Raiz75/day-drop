@@ -11,16 +11,31 @@ import { addDays, todayStr } from "@/lib/format";
 import { scoreEntry } from "@/lib/scoring";
 
 const config = {
-  total: { label: "daily score", color: "var(--chart-1)" },
+  physical: { label: "physical", color: "var(--chart-1)" },
+  mental: { label: "mental", color: "var(--chart-2)" },
+  social: { label: "social", color: "var(--chart-3)" },
+  productivity: { label: "productivity", color: "var(--chart-4)" },
 } satisfies ChartConfig;
 
 export function TrendChart({ entries }: { entries: DayEntry[] }) {
   const data = useMemo(() => {
-    const totals = new Map(entries.map((e) => [e.date, scoreEntry(e).total]));
+    const metrics = new Map(
+      entries.map((e) => {
+        const s = scoreEntry(e);
+        return [e.date, { physical: s.physical, mental: s.mental, social: s.social, productivity: s.productivity }];
+      }),
+    );
     const today = todayStr();
     return Array.from({ length: 30 }, (_, i) => {
       const date = addDays(today, -29 + i);
-      return { day: date.slice(8), total: totals.get(date) ?? null };
+      const m = metrics.get(date);
+      return {
+        day: date.slice(8),
+        physical: m?.physical ?? null,
+        mental: m?.mental ?? null,
+        social: m?.social ?? null,
+        productivity: m?.productivity ?? null,
+      };
     });
   }, [entries]);
 
@@ -39,8 +54,35 @@ export function TrendChart({ entries }: { entries: DayEntry[] }) {
           <ChartTooltip content={<ChartTooltipContent hideLabel />} />
           <Line
             type="monotone"
-            dataKey="total"
-            stroke="var(--color-total)"
+            dataKey="physical"
+            stroke="var(--color-physical)"
+            strokeWidth={2}
+            dot={false}
+            connectNulls={false}
+            isAnimationActive={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="mental"
+            stroke="var(--color-mental)"
+            strokeWidth={2}
+            dot={false}
+            connectNulls={false}
+            isAnimationActive={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="social"
+            stroke="var(--color-social)"
+            strokeWidth={2}
+            dot={false}
+            connectNulls={false}
+            isAnimationActive={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="productivity"
+            stroke="var(--color-productivity)"
             strokeWidth={2}
             dot={false}
             connectNulls={false}

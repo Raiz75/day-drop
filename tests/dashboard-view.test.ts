@@ -26,7 +26,7 @@ describe("dashboard pieces", () => {
 
   it("progress state shows balance toward the next aura", () => {
     render(createElement(RewardBanner, { balance: 57, auraCount: 2, onRedeem }));
-    expect(screen.getByText(/57 \/ 1500 pts/i)).toBeInTheDocument();
+    expect(screen.getByText(/57 \/ 1000 pts/i)).toBeInTheDocument();
     expect(screen.getByText(/aura: 2/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /reward self/i })).not.toBeInTheDocument();
   });

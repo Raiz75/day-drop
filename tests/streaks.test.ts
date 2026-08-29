@@ -4,11 +4,13 @@ import type { DayEntry } from "@/lib/db/schema";
 
 function entry(date: string, over: Partial<DayEntry> = {}): DayEntry {
   return {
-    date, work: "fun", health: "healthy", weather: [], stepsTier: 6, workouts: [],
-    screenTimeTier: 0, readingTier: 6, sleptAt: "22:30", wokeAt: "06:30", mood: "happy",
-    highlight: "x".repeat(25), improve: "y".repeat(25), grateful: "z".repeat(25),
-    todayTasks: [], tomorrowPlan: ["t"], bucketList: null, habitsChecked: [],
-    activeHabitCount: 0, createdAt: 0, updatedAt: 0, ...over,
+    date,
+    sleepDuration: 2, exercise: "medium", nutrition: ["meal1", "meal2"], hydration: 2,
+    timeOutdoor: 2, physicalFeeling: "healthy", moodCheck: "happy", reading: "decent",
+    highlights: "x".repeat(25), couldHaveBeenBetter: "y".repeat(25), storyOfTheDay: "z",
+    familyTime: true, conversations: true, kindnessActs: true, connectionStatus: "connected",
+    learnedToday: "a", tasksFinished: "b", deepWorkHours: 3, workFeeling: "focused",
+    habitsChecked: [], activeHabitCount: 0, createdAt: 0, updatedAt: 0, ...over,
   };
 }
 
@@ -28,22 +30,22 @@ describe("journalStreak", () => {
 describe("metricStreak", () => {
   it("requires score >= 7 per consecutive day", () => {
     const entries = [
-      entry("2026-08-23", { health: "healthy" }),                       // 10
-      entry("2026-08-22", { health: "under-weather" }),                 // 5 breaks
-      entry("2026-08-21", { health: "healthy" }),                       // 10 (before break)
+      entry("2026-08-23", { physicalFeeling: "healthy" }),               // physical ~8
+      entry("2026-08-22", { physicalFeeling: "unwell", sleepDuration: 0, exercise: "none", hydration: 0, timeOutdoor: 0 }), // physical low, breaks
+      entry("2026-08-21", { physicalFeeling: "healthy" }),               // before break
     ];
-    expect(metricStreak(entries, "health", "2026-08-23")).toBe(1);
+    expect(metricStreak(entries, "physical", "2026-08-23")).toBe(1);
   });
   it("skipped days break the streak too", () => {
     const entries = [entry("2026-08-23"), entry("2026-08-21")];
-    expect(metricStreak(entries, "steps", "2026-08-23")).toBe(1);
+    expect(metricStreak(entries, "mental", "2026-08-23")).toBe(1);
   });
 });
 
 describe("allStreaks", () => {
-  it("returns journal plus 7 metrics", () => {
+  it("returns journal plus 4 metrics", () => {
     const all = allStreaks([entry("2026-08-23")], "2026-08-23");
     expect(all.journal).toBe(1);
-    expect(Object.keys(all)).toHaveLength(8);
+    expect(Object.keys(all)).toHaveLength(5);
   });
 });

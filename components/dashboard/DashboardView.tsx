@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, aura banner, heatmap calendar, streak chips, 30-day trend, DayDetailSheet for picked days, Fab + JournalWizard mount, BottomNav.","IDD":[{"?":"balance = pointsBalance(all entries, auraCount) recomputed live - never stored"},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration effect mounts here in production only; public/sw.js + public/manifest.webmanifest back it."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes balance/auraCount/onRedeem this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DayDetailSheet"}],"AB":[{"?":"lib/hooks/useEntries.ts + useAura.ts"},{"?":"lib/db/repository.ts redeemAura"},{"?":"lib/scoring.ts pointsBalance"},{"?":"lib/streaks.ts allStreaks"},{"?":"components/journal/JournalWizard.tsx"},{"?":"components/shared/BottomNav.tsx fixed height dictates pb-20 shell padding"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> banner X/1500 grows; at 1500 'Reward self' -> +1 aura toast"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, aura banner, heatmap calendar, streak chips, 30-day trend, DayDetailSheet for picked days, Fab + JournalWizard mount, BottomNav.","IDD":[{"?":"balance = pointsBalance(all entries, auraCount) recomputed live - never stored"},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration effect mounts here in production only; public/sw.js + public/manifest.webmanifest back it."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes balance/auraCount/onRedeem this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DayDetailSheet"}],"AB":[{"?":"lib/hooks/useEntries.ts + useAura.ts"},{"?":"lib/db/repository.ts redeemAura"},{"?":"lib/scoring.ts pointsBalance"},{"?":"lib/streaks.ts allStreaks"},{"?":"components/journal/JournalWizard.tsx"},{"?":"components/shared/BottomNav.tsx fixed height dictates pb-20 shell padding"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> banner X/1000 grows; at 1000 'Reward self' -> +1 aura toast"}]} */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -24,8 +24,7 @@ import { allStreaks } from "@/lib/streaks";
 import { pointsBalance } from "@/lib/scoring";
 
 const ZERO_STREAKS = {
-  journal: 0, health: 0, steps: 0, workout: 0,
-  screenTime: 0, reading: 0, sleep: 0, habits: 0,
+  journal: 0, physical: 0, mental: 0, social: 0, productivity: 0,
 } as const satisfies Streaks;
 
 export function DashboardView() {

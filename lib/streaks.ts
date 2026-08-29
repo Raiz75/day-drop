@@ -31,7 +31,7 @@ export function metricStreak(entries: DayEntry[], metric: MetricKey, today: stri
 
 export function allStreaks(entries: DayEntry[], today: string): { journal: number } & Record<MetricKey, number> {
   const metrics: MetricKey[] =
-    ["health", "steps", "workout", "screenTime", "reading", "sleep", "habits"];
+    ["physical", "mental", "social", "productivity"];
   const out = { journal: journalStreak(entries.map((e) => e.date), today) } as
     { journal: number } & Record<MetricKey, number>;
   for (const m of metrics) out[m] = metricStreak(entries, m, today);

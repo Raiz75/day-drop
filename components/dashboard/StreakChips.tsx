@@ -2,8 +2,7 @@
 "use client";
 
 import {
-  IconBarbell, IconBed, IconBook, IconChecklist, IconDeviceMobile,
-  IconFlame, IconHeart, IconRun,
+  IconBrain, IconFlame, IconHeart, IconUsers, IconBolt,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import type { MetricKey } from "@/lib/scoring";
@@ -13,13 +12,10 @@ export type Streaks = { journal: number } & Record<MetricKey, number>;
 
 const CHIPS: { key: keyof Streaks; label: string; Icon: typeof IconFlame }[] = [
   { key: "journal", label: "journal", Icon: IconFlame },
-  { key: "health", label: "health", Icon: IconHeart },
-  { key: "steps", label: "steps", Icon: IconRun },
-  { key: "workout", label: "workout", Icon: IconBarbell },
-  { key: "screenTime", label: "screen", Icon: IconDeviceMobile },
-  { key: "reading", label: "reading", Icon: IconBook },
-  { key: "sleep", label: "sleep", Icon: IconBed },
-  { key: "habits", label: "habits", Icon: IconChecklist },
+  { key: "physical", label: "physical", Icon: IconHeart },
+  { key: "mental", label: "mental", Icon: IconBrain },
+  { key: "social", label: "social", Icon: IconUsers },
+  { key: "productivity", label: "productivity", Icon: IconBolt },
 ];
 
 export function StreakChips({ streaks }: { streaks: Streaks }) {
