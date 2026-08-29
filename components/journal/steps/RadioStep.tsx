@@ -6,9 +6,10 @@ import type { StepDef, StepId } from "@/lib/journal/steps";
 import { cn } from "@/lib/utils";
 
 const TIER_FIELD: Partial<Record<StepId, keyof DayEntry>> = {
-  steps: "stepsTier",
-  screenTime: "screenTimeTier",
-  reading: "readingTier",
+  sleepDuration: "sleepDuration",
+  hydration: "hydration",
+  timeOutdoor: "timeOutdoor",
+  deepWorkHours: "deepWorkHours",
 };
 
 export function RadioStep({
@@ -23,15 +24,25 @@ export function RadioStep({
   const tierField = step.type === "tier-radio" ? TIER_FIELD[step.id] : undefined;
   const selectedIndex = typeof value === "number" ? value : -1;
 
-  const isSelected = (optionId: string, index: number) =>
-    tierField ? selectedIndex === index : value === optionId;
+  const isBooleanField =
+    step.options?.length === 2 &&
+    step.options.some((o) => o.id === "yes") &&
+    step.options.some((o) => o.id === "no");
+
+  const isSelected = (optionId: string, index: number) => {
+    if (tierField) return selectedIndex === index;
+    if (isBooleanField) return value === (optionId === "yes");
+    return value === optionId;
+  };
 
   const choose = (optionId: string, index: number) => {
-    onChange(
-      tierField
-        ? ({ [tierField]: index } as Partial<DayEntry>)
-        : ({ [step.id]: optionId } as Partial<DayEntry>),
-    );
+    if (isBooleanField) {
+      onChange({ [step.id]: optionId === "yes" } as Partial<DayEntry>);
+    } else if (tierField) {
+      onChange({ [tierField]: index } as Partial<DayEntry>);
+    } else {
+      onChange({ [step.id]: optionId } as Partial<DayEntry>);
+    }
   };
 
   return (

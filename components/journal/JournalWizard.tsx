@@ -154,24 +154,33 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
       const existing = await getTodayEntry(today);
       const entry: DayEntry = {
         date: today,
-        work: a.work ?? "",
-        health: a.health ?? "",
-        weather: a.weather ?? [],
-        stepsTier: a.stepsTier ?? 0,
-        workouts: a.workouts ?? [],
-        screenTimeTier: a.screenTimeTier ?? 0,
-        readingTier: a.readingTier ?? 0,
-        sleptAt: a.sleptAt ?? "",
-        wokeAt: a.wokeAt ?? "",
-        mood: a.mood ?? "",
-        highlight: a.highlight ?? "",
-        improve: a.improve ?? "",
-        grateful: a.grateful ?? "",
-        todayTasks: a.todayTasks ?? [],
-        tomorrowPlan: a.tomorrowPlan ?? [],
-        bucketList: a.bucketList ? a.bucketList : null,
+        // Physical Well-being
+        sleepDuration: a.sleepDuration ?? 0,
+        exercise: a.exercise ?? "light",
+        nutrition: a.nutrition ?? [],
+        hydration: a.hydration ?? 0,
+        timeOutdoor: a.timeOutdoor ?? 0,
+        physicalFeeling: a.physicalFeeling ?? "okay",
+        // Mental & Emotional
+        moodCheck: a.moodCheck ?? "okay",
+        reading: a.reading ?? "none",
+        highlights: a.highlights ?? "",
+        couldHaveBeenBetter: a.couldHaveBeenBetter ?? "",
+        storyOfTheDay: a.storyOfTheDay ?? null,
+        // Relationship Well-being
+        familyTime: a.familyTime ?? false,
+        conversations: a.conversations ?? false,
+        kindnessActs: a.kindnessActs ?? false,
+        connectionStatus: a.connectionStatus ?? "neutral",
+        // Work & Productivity
+        learnedToday: a.learnedToday ?? "",
+        tasksFinished: a.tasksFinished ?? "",
+        deepWorkHours: a.deepWorkHours ?? 0,
+        workFeeling: a.workFeeling ?? "scattered",
+        // Habits
         habitsChecked: a.habitsChecked ?? [],
         activeHabitCount: 0,
+        // Meta
         createdAt: existing?.createdAt ?? Date.now(),
         updatedAt: Date.now(),
       };
