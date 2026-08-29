@@ -1,3 +1,4 @@
+/* AI-CONTEXT-NOTE:{"R":"Unit tests for lib/db/schema.ts: Dexie DB structure, meta key helpers, draft key.","IDD":[],"A":[],"AB":["lib/db/schema.ts"],"E":["npm test tests/schema.test.ts"]} */
 import "fake-indexeddb/auto";
 import { describe, expect, it } from "vitest";
 import { DRAFT_KEY, auraKey, celebratedKey, db } from "@/lib/db/schema";

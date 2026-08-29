@@ -1,3 +1,4 @@
+/* AI-CONTEXT-NOTE:{"R":"Unit tests for lib/scoring.ts: physical/mental/social/productivity scores, total, aura points.","IDD":[],"A":[],"AB":["lib/scoring.ts","lib/db/schema.ts"],"E":["npm test tests/scoring.test.ts"]} */
 import { describe, expect, it } from "vitest";
 import { AURA_COST, pointsBalance, scoreEntry, totalPoints } from "@/lib/scoring";
 import type { DayEntry } from "@/lib/db/schema";

@@ -1,3 +1,4 @@
+/* AI-CONTEXT-NOTE:{"R":"Unit tests for lib/journal/steps.ts: step definitions, categories, option labels.","IDD":[],"A":[],"AB":["lib/journal/steps.ts"],"E":["npm test tests/journal-steps.test.ts"]} */
 import { describe, expect, it } from "vitest";
 import { STEPS, stepById, optionLabel, CATEGORIES } from "@/lib/journal/steps";
 
