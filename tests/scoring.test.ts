@@ -34,7 +34,6 @@ describe("scoreEntry", () => {
     const s = scoreEntry(base);
     expect(s.physical).toBe(10);
     expect(s.mental).toBe(10);
-    // social booleans cap at 8; (8+8+8+10)/4 = 8.5 -> rounds to 9
     expect(s.social).toBe(9);
     expect(s.productivity).toBe(10);
     expect(s.total).toBe(39);
@@ -44,7 +43,6 @@ describe("scoreEntry", () => {
     const s = scoreEntry(base);
     expect(s.physical).toBe(10);
 
-    // worst case: all low values
     const worst: DayEntry = {
       ...base,
       sleepDuration: 0,
@@ -54,8 +52,6 @@ describe("scoreEntry", () => {
       timeOutdoor: 0,
       physicalFeeling: "unwell",
     };
-    // sleep[0]=3, exercise=light=4, nutrition=1, hydration[0]=3, outdoor[0]=2, unwell=2
-    // avg=(3+4+1+3+2+2)/6=2.5 -> round=3
     expect(scoreEntry(worst).physical).toBe(3);
   });
 
@@ -63,7 +59,6 @@ describe("scoreEntry", () => {
     const s = scoreEntry(base);
     expect(s.mental).toBe(10);
 
-    // no text bonuses, low mood, no reading
     const low: DayEntry = {
       ...base,
       moodCheck: "sad",
@@ -72,7 +67,6 @@ describe("scoreEntry", () => {
       couldHaveBeenBetter: "",
       storyOfTheDay: null,
     };
-    // mood=2, reading=1, textBonus=0 -> avg=(2+1+0)/3=1 -> round=1
     expect(scoreEntry(low).mental).toBe(1);
   });
 
@@ -80,7 +74,6 @@ describe("scoreEntry", () => {
     const s = scoreEntry(base);
     expect(s.social).toBe(9);
 
-    // all no
     const disconnected: DayEntry = {
       ...base,
       familyTime: false,
@@ -88,13 +81,10 @@ describe("scoreEntry", () => {
       kindnessActs: false,
       connectionStatus: "lonely",
     };
-    // (2+2+2+2)/4 = 2
     expect(scoreEntry(disconnected).social).toBe(2);
   });
 
   it("social reaches 10 when all booleans true and connection connected", () => {
-    // social = (8+8+8+10)/4 = 8.5 -> 9
-    // There is no way to get 10 with booleans capped at 8
     const s = scoreEntry(base);
     expect(s.social).toBe(9);
   });
@@ -103,7 +93,6 @@ describe("scoreEntry", () => {
     const s = scoreEntry(base);
     expect(s.productivity).toBe(10);
 
-    // no deep work, drained, no text
     const low: DayEntry = {
       ...base,
       deepWorkHours: 0,
@@ -111,7 +100,6 @@ describe("scoreEntry", () => {
       learnedToday: "",
       tasksFinished: "",
     };
-    // deepWork=1, work=2, text=0 -> avg=(1+2+0)/3=1 -> round=1
     expect(scoreEntry(low).productivity).toBe(1);
   });
 
