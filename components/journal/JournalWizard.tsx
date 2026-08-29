@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Full-screen journal wizard overlay: draft resume/autosave via repository, machine-driven navigation, submitEntry on Finish, celebration on day-100 archives.","IDD":[{"?":"Remounts fresh per open: outer component keys the inner flow by session so stale answers never leak across sessions"},{"?":"On mount: getDraft() try/catch - wrong-date or corrupt drafts are silently discarded, never crash; with no draft, today's submitted entry prefills for editing (createdAt preserved on resubmit)"},{"?":"Autosave is fire-and-forget and gated until draft hydration finished (never overwrites a draft it has not read)"},{"?":"Tier answers stay numeric indexes; sleep uses separate sleptAt/wokeAt strings - UI never writes option-id strings into tier fields"},{"?":"bucketList '' -> null normalized at submit; createdAt preserved on same-day edit"},{"?":"entry.activeHabitCount is a type-satisfying placeholder - repository.submitEntry overwrites it with the active-habit snapshot from its arg"}],"A":[{"!!!":"components/dashboard/DashboardView.tsx mounts <JournalWizard open onOpenChange onSubmitted/>"}],"AB":[{"?":"lib/journal/machine.ts reducer/canAdvance/answerFor"},{"?":"lib/journal/steps.ts STEPS, CATEGORIES"},{"?":"lib/db/repository.ts getDraft/saveDraft/submitEntry/getTodayEntry/getLatestEntryBefore"},{"?":"lib/carryover.ts buildTodayChecklist/mergeCarried"},{"?":"components/journal/StepRenderer.tsx"},{"?":"components/journal/CelebrationScreen.tsx"},{"?":"components/journal/CategoryHeader.tsx"}],"E":[{"!!":"npm run build"},{"!!":"npm test tests/machine.test.ts pins machine behavior"},{"?":"Manual smoke: mid-wizard reload resumes draft; same-day edit prefills; s13 unchecked Next shows toast+dialog; Yes carries into s14"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Full-screen journal wizard overlay: draft resume/autosave via repository, machine-driven navigation, submitEntry on Finish, celebration on day-100 archives.","IDD":[{"?":"Remounts fresh per open: outer component keys the inner flow by session so stale answers never leak across sessions"},{"?":"On mount: getDraft() try/catch - wrong-date or corrupt drafts are silently discarded, never crash; with no draft, today's submitted entry prefills for editing (createdAt preserved on resubmit)"},{"?":"Autosave is fire-and-forget and gated until draft hydration finished (never overwrites a draft it has not read)"},{"?":"Tier answers stay numeric indexes; sleep uses tier-radio for sleepDuration - UI never writes option-id strings into tier fields"},{"?":"storyOfTheDay '' -> null normalized at submit; createdAt preserved on same-day edit"},{"?":"entry.activeHabitCount is a type-satisfying placeholder - repository.submitEntry overwrites it with the active-habit snapshot from its arg"}],"A":[{"!!!":"components/dashboard/DashboardView.tsx mounts <JournalWizard open onOpenChange onSubmitted/>"}],"AB":[{"?":"lib/journal/machine.ts reducer/canAdvance/answerFor"},{"?":"lib/journal/steps.ts STEPS, CATEGORIES"},{"?":"lib/db/repository.ts getDraft/saveDraft/submitEntry/getTodayEntry/getLatestEntryBefore"},{"?":"components/journal/StepRenderer.tsx"},{"?":"components/journal/CelebrationScreen.tsx"},{"?":"components/journal/CategoryHeader.tsx"}],"E":[{"!!":"npm run build"},{"!!":"npm test tests/machine.test.ts pins machine behavior"},{"?":"Manual smoke: mid-wizard reload resumes draft; same-day edit prefills"}]} */
 "use client";
 
 import { useEffect, useReducer, useRef, useState } from "react";
@@ -7,12 +7,6 @@ import { IconArrowLeft, IconArrowRight, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { CelebrationScreen } from "./CelebrationScreen";
 import { StepRenderer } from "./StepRenderer";
-import type { TasksGate } from "./steps/TasksChecklistStep";
-import {
-  buildTodayChecklist,
-  mergeCarried,
-  type ChecklistItem,
-} from "@/lib/carryover";
 import type { DayEntry, Habit } from "@/lib/db/schema";
 import {
   getDraft,
@@ -56,11 +50,8 @@ export function JournalWizard({ open, onOpenChange, onSubmitted }: JournalWizard
 function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): void }) {
   const [state, dispatch] = useReducer(reducer, undefined, initialWizardState);
   const [ready, setReady] = useState(false);
-  const [tasks, setTasks] = useState<ChecklistItem[]>([]);
-  const [carried, setCarried] = useState<string[]>([]);
   const [celebration, setCelebration] = useState<Habit[] | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const gateRef = useRef<TasksGate | null>(null);
   const activeHabits = useActiveHabits();
 
   useEffect(() => {
@@ -68,14 +59,11 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
     (async () => {
       try {
         const today = todayStr();
-        const [draft, prev, todayEntry] = await Promise.all([
+        const [draft, todayEntry] = await Promise.all([
           getDraft(),
-          getLatestEntryBefore(today),
           getTodayEntry(today),
         ]);
         if (cancelled) return;
-        const checklist = buildTodayChecklist(prev?.tomorrowPlan);
-        setTasks(checklist);
         if (
           draft &&
           draft.date === today &&
@@ -91,7 +79,6 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
             type: "answer",
             patch: {
               ...draft.answers,
-              todayTasks: draft.answers.todayTasks ?? checklist,
               habitsChecked: draft.answers.habitsChecked ?? [],
             },
           });
@@ -103,7 +90,7 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
           void updatedAt;
           dispatch({ type: "answer", patch: answers });
         } else {
-          dispatch({ type: "answer", patch: { todayTasks: checklist, habitsChecked: [] } });
+          dispatch({ type: "answer", patch: { habitsChecked: [] } });
         }
       } catch {
         if (!cancelled) dispatch({ type: "answer", patch: { habitsChecked: [] } });
@@ -127,21 +114,8 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
   const last = state.stepIndex === STEPS.length - 1;
   const isFirstInCategory = CATEGORIES.some((c) => c.stepIds[0] === step.id);
 
-  const handleCarried = (texts: string[]) => {
-    setCarried(texts);
-    dispatch({
-      type: "answer",
-      patch: { tomorrowPlan: mergeCarried(state.answers.tomorrowPlan, texts) },
-    });
-  };
-
   const handleNext = () => {
     if (!canAdvance(state)) return;
-    if (step.type === "tasks" && gateRef.current) {
-      gateRef.current.attempt(() => dispatch({ type: "next" }));
-      return;
-    }
-    if (step.id === "tomorrowPlan") setCarried([]);
     dispatch({ type: "next" });
   };
 
@@ -216,10 +190,6 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
               step={step}
               answers={state.answers}
               answerValue={answerFor(step.id, state.answers)}
-              tasks={tasks}
-              carried={carried}
-              onCarried={handleCarried}
-              gateRef={gateRef}
               onChange={(patch) => dispatch({ type: "answer", patch })}
             />
           </>

@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Headless wizard state machine over STEPS[16]: answers, advance gating via validateStep.","IDD":[{"?":"stepIndex indexes STEPS array (0-based); order field is display-only."},{"?":"Tier steps map StepId 'steps'/'screenTime'/'reading' to *Tier fields; others share names."},{"?":"Tier answers are numeric indexes; canAdvance translates index->option id before validateStep."},{"?":"Pure reducer - persistence of drafts happens in JournalWizard via repository.saveDraft."}],"A":[{"!!!":"components/journal/JournalWizard.tsx","CRITICAL":"UI drives this reducer; do not duplicate validation there"},{"?":"tests/machine.test.ts pins behavior"}],"AB":[{"?":"lib/journal/steps.ts"},{"?":"lib/validations/journal.ts"}],"E":[{"!!":"tests/machine.test.ts"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Headless wizard state machine over STEPS[20]: answers, advance gating via validateStep.","IDD":[{"?":"stepIndex indexes STEPS array (0-based); order field is display-only."},{"?":"Tier steps map StepId to tier index fields; others share names."},{"?":"Tier answers are stored as numeric indexes (Partial<DayEntry>); canAdvance translates index->option id before validateStep."},{"?":"Pure reducer - persistence of drafts happens in JournalWizard via repository.saveDraft."}],"A":[{"!!!":"components/journal/JournalWizard.tsx","CRITICAL":"UI drives this reducer; do not duplicate validation there"},{"?":"tests/machine.test.ts pins behavior"}],"AB":[{"?":"lib/journal/steps.ts"},{"?":"lib/validations/journal.ts"}],"E":[{"!!":"tests/machine.test.ts"}]} */
 import { STEPS, type StepDef, type StepId } from "@/lib/journal/steps";
 import { validateStep } from "@/lib/validations/journal";
 import type { DayEntry } from "@/lib/db/schema";
@@ -14,19 +14,30 @@ export type WizardAction =
   | { type: "back" }
   | { type: "goto"; index: number };
 
-const FIELD_BY_STEP: Record<Exclude<StepId, "sleep">, keyof DayEntry> = {
-  work: "work", health: "health", weather: "weather",
-  steps: "stepsTier", workout: "workouts", screenTime: "screenTimeTier",
-  reading: "readingTier", mood: "mood", highlight: "highlight",
-  improve: "improve", grateful: "grateful", todayTasks: "todayTasks",
-  tomorrowPlan: "tomorrowPlan", bucketList: "bucketList", habits: "habitsChecked",
+const FIELD_BY_STEP: Record<StepId, keyof DayEntry> = {
+  sleepDuration: "sleepDuration",
+  exercise: "exercise",
+  nutrition: "nutrition",
+  hydration: "hydration",
+  timeOutdoor: "timeOutdoor",
+  physicalFeeling: "physicalFeeling",
+  moodCheck: "moodCheck",
+  reading: "reading",
+  highlights: "highlights",
+  couldHaveBeenBetter: "couldHaveBeenBetter",
+  storyOfTheDay: "storyOfTheDay",
+  familyTime: "familyTime",
+  conversations: "conversations",
+  kindnessActs: "kindnessActs",
+  connectionStatus: "connectionStatus",
+  learnedToday: "learnedToday",
+  tasksFinished: "tasksFinished",
+  deepWorkHours: "deepWorkHours",
+  workFeeling: "workFeeling",
+  habits: "habitsChecked",
 };
 
 export function answerFor(stepId: StepId, answers: Partial<DayEntry>): unknown {
-  if (stepId === "sleep") {
-    if (answers.sleptAt == null && answers.wokeAt == null) return undefined;
-    return { sleptAt: answers.sleptAt, wokeAt: answers.wokeAt };
-  }
   return answers[FIELD_BY_STEP[stepId]];
 }
 

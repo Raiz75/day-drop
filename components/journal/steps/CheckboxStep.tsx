@@ -1,15 +1,10 @@
-/* AI-CONTEXT-NOTE:{"R":"Multi-toggle step body for checkbox steps (weather, workout) with check-icon rows.","IDD":[{"?":"s5 workout exclusivity lives HERE: toggling any workout id removes rest-day and vice versa (pure onChange patch logic)"},{"?":"Writes string[] of option ids to weather/workouts"}],"A":[{"?":"components/journal/StepRenderer.tsx dispatches checkbox here"}],"AB":[{"?":"lib/journal/steps.ts"},{"?":"components/ui/checkbox.tsx"},{"?":"lib/utils cn"}],"E":[{"!!":"npm run build"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Multi-toggle step body for checkbox steps (nutrition) with check-icon rows.","IDD":[{"?":"Writes string[] of option ids to nutrition field"}],"A":[{"?":"components/journal/StepRenderer.tsx dispatches checkbox here"}],"AB":[{"?":"lib/journal/steps.ts"},{"?":"components/ui/checkbox.tsx"},{"?":"lib/utils cn"}],"E":[{"!!":"npm run build"}]} */
 "use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import type { DayEntry } from "@/lib/db/schema";
 import type { StepDef, StepId } from "@/lib/journal/steps";
 import { cn } from "@/lib/utils";
-
-const FIELD: Partial<Record<StepId, "weather" | "workouts">> = {
-  weather: "weather",
-  workout: "workouts",
-};
 
 export function CheckboxStep({
   step,
@@ -20,21 +15,16 @@ export function CheckboxStep({
   value: unknown;
   onChange(patch: Partial<DayEntry>): void;
 }) {
-  const field = FIELD[step.id];
   const selected: string[] = Array.isArray(value) ? value : [];
 
   const toggle = (id: string) => {
     let next: string[];
-    if (step.id === "workout" && id === "rest-day") {
-      next = selected.includes(id) ? [] : ["rest-day"];
-    } else if (selected.includes(id)) {
+    if (selected.includes(id)) {
       next = selected.filter((x) => x !== id);
-    } else if (step.id === "workout") {
-      next = [...selected.filter((x) => x !== "rest-day"), id];
     } else {
       next = [...selected, id];
     }
-    onChange({ [field ?? step.id]: next } as Partial<DayEntry>);
+    onChange({ [step.id]: next } as Partial<DayEntry>);
   };
 
   return (

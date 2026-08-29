@@ -30,8 +30,8 @@ describe("settings aura card", () => {
     expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     expect(screen.getByText(/^aura$/i)).toBeInTheDocument();
     // 1 redemption, no entries -> raw derived balance is negative (accepted edge case);
-    // pin the structural "X / 1500 pts" line, not the exact number.
-    expect(screen.getByText(/\/ 1500 pts/i)).toBeInTheDocument();
+    // pin the structural "X / 1000 pts" line, not the exact number.
+    expect(screen.getByText(/\/ 1000 pts/i)).toBeInTheDocument();
     expect(screen.getByText(/\+1 aura/i)).toBeInTheDocument();
   });
 });

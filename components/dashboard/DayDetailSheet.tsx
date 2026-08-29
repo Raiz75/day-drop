@@ -1,10 +1,9 @@
-/* AI-CONTEXT-NOTE:{"R":"Bottom sheet readout of one journal entry: mood title, weather icons, workout chips, sleep window, quote blocks, task checks, habit list (unknown ids => '(removed habit)'), tier labels.","IDD":[{"?":"Habit-name resolution needs active+archived habits; hooks live in inner SheetBody so they only run while the sheet is open."},{"?":"optionLabel throws on unknown ids - safeLabel/tierLabel wrap it with fallbacks so corrupt entries never crash the sheet."},{"?":"Weather option ids map to Tabler icons: hot-sunny SunHigh, sunny-clouds Sun, cloudy-gloomy Cloud, light-rain Umbrella, heavy-rain CloudRain, stormy CloudStorm."}],"A":[{"!!!":"components/dashboard/DashboardView.tsx","CRITICAL":"sole consumer - passes picked entry + open state"},{"?":"components/ui/sheet.tsx bottom side"}],"AB":[{"!":"lib/journal/steps.ts optionLabel/stepById","renaming an option id changes readout fallbacks"},{"?":"lib/hooks/useHabits active+archived lists"},{"?":"lib/db/schema.ts DayEntry"}],"E":[{"!!":"npm run build"},{"?":"Empty-string fields must render nothing, not throw"},{"*":"Removed habit ids fall back to '(removed habit)'"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Bottom sheet readout of one journal entry: mood title, physical feeling, tier labels, text quotes, task checks, habit list (unknown ids => '(removed habit)').","IDD":[{"?":"Habit-name resolution needs active+archived habits; hooks live in inner SheetBody so they only run while the sheet is open."},{"?":"optionLabel throws on unknown ids - safeLabel/tierLabel wrap it with fallbacks so corrupt entries never crash the sheet."}],"A":[{"!!!":"components/dashboard/DashboardView.tsx","CRITICAL":"sole consumer - passes picked entry + open state"},{"?":"components/ui/sheet.tsx bottom side"}],"AB":[{"!":"lib/journal/steps.ts optionLabel/stepById","renaming an option id changes readout fallbacks"},{"?":"lib/hooks/useHabits active+archived lists"},{"?":"lib/db/schema.ts DayEntry"}],"E":[{"!!":"npm run build"},{"?":"Empty-string fields must render nothing, not throw"},{"*":"Removed habit ids fall back to '(removed habit)'"}]} */
 "use client";
 
 import type { ComponentType } from "react";
 import {
-  IconCheck, IconCloud, IconCloudRain, IconCloudStorm, IconQuote,
-  IconSun, IconSunHigh, IconUmbrella, IconX,
+  IconCheck, IconQuote, IconX,
 } from "@tabler/icons-react";
 import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
@@ -22,15 +21,6 @@ interface Props {
   open: boolean;
   onOpenChange(open: boolean): void;
 }
-
-const WEATHER_ICONS: Record<string, ComponentType<{ className?: string }>> = {
-  "hot-sunny": IconSunHigh,
-  "sunny-clouds": IconSun,
-  "cloudy-gloomy": IconCloud,
-  "light-rain": IconUmbrella,
-  "heavy-rain": IconCloudRain,
-  "stormy": IconCloudStorm,
-};
 
 function safeLabel(stepId: StepId, optionId: string): string {
   if (!optionId) return "";
@@ -66,45 +56,39 @@ function SheetBody({ entry }: { entry: DayEntry }) {
   }).format(fromStr(entry.date));
 
   const quotes: [string, string][] = [
-    ["highlight", entry.highlight],
-    ["grateful for", entry.grateful],
-    ["could be better", entry.improve],
+    ["highlight", entry.highlights],
+    ["could be better", entry.couldHaveBeenBetter],
+    ["story", entry.storyOfTheDay ?? ""],
   ];
   const tiers: [string, StepId, number][] = [
-    ["steps", "steps", entry.stepsTier],
-    ["screen time", "screenTime", entry.screenTimeTier],
-    ["reading", "reading", entry.readingTier],
+    ["sleep", "sleepDuration", entry.sleepDuration],
+    ["hydration", "hydration", entry.hydration],
+    ["outdoor", "timeOutdoor", entry.timeOutdoor],
+    ["deep work", "deepWorkHours", entry.deepWorkHours],
   ];
 
   return (
     <div className="flex flex-col gap-5 px-6 pb-8">
       <SheetHeader className="p-0">
-        <SheetTitle>{safeLabel("mood", entry.mood) || "journal entry"}</SheetTitle>
+        <SheetTitle>{safeLabel("moodCheck", entry.moodCheck) || "journal entry"}</SheetTitle>
         <SheetDescription>{dateLine}</SheetDescription>
       </SheetHeader>
 
-      {entry.weather.length > 0 && (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          {entry.weather.map((id) => {
-            const Icon = WEATHER_ICONS[id] ?? IconCloud;
-            return <Icon key={id} className="size-5" aria-label={safeLabel("weather", id)} />;
-          })}
-        </div>
-      )}
+      <div className="flex flex-wrap gap-1.5">
+        <Badge variant="secondary">{safeLabel("physicalFeeling", entry.physicalFeeling)}</Badge>
+        <Badge variant="secondary">{entry.familyTime ? "yes" : "no"}</Badge>
+        <Badge variant="secondary">{entry.conversations ? "yes" : "no"}</Badge>
+        <Badge variant="secondary">{entry.kindnessActs ? "yes" : "no"}</Badge>
+        <Badge variant="secondary">{safeLabel("connectionStatus", entry.connectionStatus)}</Badge>
+        <Badge variant="secondary">{safeLabel("exercise", entry.exercise)}</Badge>
+        <Badge variant="secondary">{safeLabel("workFeeling", entry.workFeeling)}</Badge>
+      </div>
 
-      {entry.workouts.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {entry.workouts.map((id) => (
-            <Badge key={id} variant="secondary">{safeLabel("workout", id)}</Badge>
-          ))}
-        </div>
-      )}
-
-      {(entry.sleptAt || entry.wokeAt) && (
-        <p className="text-sm text-muted-foreground">
-          slept {entry.sleptAt || "?"} → woke {entry.wokeAt || "?"}
-        </p>
-      )}
+      <div className="flex flex-wrap gap-1.5">
+        {entry.nutrition.map((id) => (
+          <Badge key={id} variant="secondary">{safeLabel("nutrition", id)}</Badge>
+        ))}
+      </div>
 
       {quotes
         .filter(([, text]) => text)
@@ -116,19 +100,16 @@ function SheetBody({ entry }: { entry: DayEntry }) {
           </blockquote>
         ))}
 
-      {entry.todayTasks.length > 0 && (
-        <ul className="flex flex-col gap-1.5">
-          {entry.todayTasks.map((t, i) => (
-            <li key={i} className="flex items-center gap-2 text-sm">
-              {t.done ? (
-                <IconCheck className="size-4 shrink-0 text-primary" aria-label="done" />
-              ) : (
-                <IconX className="size-4 shrink-0 text-muted-foreground" aria-label="not done" />
-              )}
-              <span className={t.done ? "" : "text-muted-foreground"}>{t.text}</span>
-            </li>
-          ))}
-        </ul>
+      {entry.tasksFinished && (
+        <p className="text-sm text-muted-foreground">
+          tasks: {entry.tasksFinished}
+        </p>
+      )}
+
+      {entry.learnedToday && (
+        <p className="text-sm text-muted-foreground">
+          learned: {entry.learnedToday}
+        </p>
       )}
 
       {entry.habitsChecked.length > 0 && (
