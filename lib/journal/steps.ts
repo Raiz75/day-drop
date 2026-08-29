@@ -1,9 +1,11 @@
-/* AI-CONTEXT-NOTE:{"R":"Single source of truth for the 16 wizard steps: question copy, option ids/labels, tier scores, validation hints.","IDD":[{"?":"Option ids are stable slugs persisted in entries; labels may change freely."},{"?":"points on options feed lib/scoring.ts; tierScores are per-tier arrays."},{"?":"s5 rest-day exclusivity is enforced in CheckboxStep UI, ids here stay plain."}],"A":[{"!!!":"lib/scoring.ts","CRITICAL":"scoring maps hard-code these option ids"},{"?":"lib/validations/journal.ts"},{"?":"components/journal/** renders this config"},{"?":"lib/carryover.ts"}],"AB":[],"E":[{"!!":"tests/journal-steps.test.ts"},{"?":"Changing an option id requires a data migration"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Single source of truth for the 20 wizard steps across 4 categories: question copy, option ids/labels, tier scores, validation hints.","IDD":[{"?":"Option ids are stable slugs persisted in entries; labels may change freely."},{"?":"points on options feed lib/scoring.ts; tierScores are per-tier arrays."},{"?":"CATEGORIES defines the 4-category structure for the journal redesign."}],"A":[{"!!!":"lib/scoring.ts","CRITICAL":"scoring maps hard-code these option ids"},{"?":"components/journal/** renders this config"}],"AB":[],"E":[{"!!":"tests/journal-steps.test.ts"},{"?":"Changing an option id requires a data migration"}]} */
 
 export type StepId =
-  | "work" | "health" | "weather" | "steps" | "workout" | "screenTime"
-  | "reading" | "sleep" | "mood" | "highlight" | "improve" | "grateful"
-  | "todayTasks" | "tomorrowPlan" | "bucketList" | "habits";
+  | "sleepDuration" | "exercise" | "nutrition" | "hydration" | "timeOutdoor" | "physicalFeeling"
+  | "moodCheck" | "reading" | "highlights" | "couldHaveBeenBetter" | "storyOfTheDay"
+  | "familyTime" | "conversations" | "kindnessActs" | "connectionStatus"
+  | "learnedToday" | "tasksFinished" | "deepWorkHours" | "workFeeling"
+  | "habits";
 
 export interface StepOption { id: string; label: string; points?: number }
 
@@ -11,83 +13,96 @@ export interface StepDef {
   id: StepId;
   order: number;
   question: string;
-  type: "radio" | "checkbox" | "tier-radio" | "sleep" | "text" | "tasks" | "tomorrow" | "habits";
+  type: "radio" | "checkbox" | "tier-radio" | "text" | "habits";
   options?: StepOption[];
   tierScores?: number[];
   minChars?: number;
   optional?: boolean;
 }
 
+export interface CategoryDef {
+  id: string;
+  name: string;
+  stepIds: StepId[];
+}
+
+export const CATEGORIES: readonly CategoryDef[] = [
+  { id: "physical", name: "Physical Well-being", stepIds: ["sleepDuration", "exercise", "nutrition", "hydration", "timeOutdoor", "physicalFeeling"] },
+  { id: "mental", name: "Mental & Emotional", stepIds: ["moodCheck", "reading", "highlights", "couldHaveBeenBetter", "storyOfTheDay"] },
+  { id: "social", name: "Relationship Well-being", stepIds: ["familyTime", "conversations", "kindnessActs", "connectionStatus"] },
+  { id: "productivity", name: "Work & Productivity", stepIds: ["learnedToday", "tasksFinished", "deepWorkHours", "workFeeling"] },
+];
+
 const opt = (id: string, label: string, points?: number): StepOption => ({ id, label, points });
 
 export const STEPS: readonly StepDef[] = [
-  { id: "work", order: 1, question: "how was your work today?", type: "radio", options: [
-    opt("fun", "i had fun today"), opt("productive", "i was super productive"),
-    opt("boring", "it was boring as hell"), opt("stressful", "soooo stressful"),
-    opt("annoying", "annoying honestly..."),
+  // Physical Well-being
+  { id: "sleepDuration", order: 1, question: "how many hours did you sleep?", type: "tier-radio",
+    tierScores: [3, 5, 10, 8, 6, 3], options: [
+      opt("5-6h", "5-6 hours"), opt("6-7h", "6-7 hours"), opt("7-8h", "7-8 hours"),
+      opt("8-9h", "8-9 hours"), opt("9-10h", "9-10 hours"), opt("10h+", "10+ hours"),
   ]},
-  { id: "health", order: 2, question: "how was your health today?", type: "radio", options: [
-    opt("healthy", "i feel healthy today", 10), opt("under-weather", "I'm feeling under the weather", 5),
-    opt("cold-symptoms", "I've got cold symptoms ugh", 4), opt("headache", "i had a headache", 4),
-    opt("stomach-ache", "my stomach hurts", 3), opt("feverish", "i'm feverish...", 2),
+  { id: "exercise", order: 2, question: "what level of exercise did you get?", type: "radio", options: [
+      opt("light", "light", 4), opt("medium", "medium", 7), opt("heavy", "heavy", 10),
   ]},
-  { id: "weather", order: 3, question: "what's the weather like today?", type: "checkbox", options: [
-    opt("hot-sunny", "it's hot and sunny out"), opt("sunny-clouds", "it's sunny with some clouds"),
-    opt("cloudy-gloomy", "it's cloudy and gloomy"), opt("light-rain", "there's light rain falling"),
-    opt("heavy-rain", "it's pouring rain outside"), opt("stormy", "it's literally stormy out there"),
+  { id: "nutrition", order: 3, question: "what did you eat today?", type: "checkbox", options: [
+      opt("meat", "meat"), opt("vegetables", "vegetables"), opt("fruit", "fruit"),
   ]},
-  { id: "steps", order: 4, question: "how many steps did you take today?", type: "tier-radio",
-    tierScores: [1, 2, 4, 6, 8, 9, 10], options: [
-    opt("barely-walked", "barely walked (just 0-3000 steps)"),
-    opt("little-bit", "i did a little bit (3001-5000)"),
-    opt("decent-amount", "i walked a decent amount (5001-7000)"),
-    opt("active", "i was active today (7001-8000)"),
-    opt("walked-lot", "i walked a lot (8001-9000)"),
-    opt("on-fire", "i was on fire (9001-10000)"),
-    opt("above-beyond", "i went above and beyond (10000+ steps!)"),
+  { id: "hydration", order: 4, question: "how much water did you drink?", type: "tier-radio",
+    tierScores: [3, 5, 8, 10], options: [
+      opt("500ml", "500ml"), opt("1L", "1 liter"), opt("1.5L", "1.5 liters"), opt("2L+", "2+ liters"),
   ]},
-  { id: "workout", order: 5, question: "what workout did you do today?", type: "checkbox", options: [
-    opt("rest-day", "it's a rest day for me", 1), opt("walk", "i went for a walk", 3),
-    opt("run", "i went for a run", 6), opt("sports", "i played sports", 5),
-    opt("upper-body", "i did upper body", 5), opt("lower-body", "i did lower body", 5),
-    opt("full-body", "i did a full body workout", 8),
+  { id: "timeOutdoor", order: 5, question: "how much time did you spend outside?", type: "tier-radio",
+    tierScores: [2, 5, 8, 10], options: [
+      opt("under-30min", "less than 30 minutes"), opt("30-60min", "30-60 minutes"),
+      opt("1-2h", "1-2 hours"), opt("2h+", "2+ hours"),
   ]},
-  { id: "screenTime", order: 6, question: "how much screen time did you have?", type: "tier-radio",
-    tierScores: [10, 9, 7, 5, 4, 3, 2, 1], options: [
-    opt("barely-used", "i barely used my phone (just 0-1 hour)"),
-    opt("a-little", "i used it a little (2 hours)"),
-    opt("moderately", "i used it moderately (3 hours)"),
-    opt("quite-some", "i spent quite some time (4 hours)"),
-    opt("on-it-lot", "i was on it a lot (5 hours)"),
-    opt("glued", "i was glued to it (6 hours)"),
-    opt("way-too-much", "i was on it way too much (7 hours)"),
-    opt("ashamed", "i'm ashamed (8+ hours)"),
+  { id: "physicalFeeling", order: 6, question: "how does your body feel?", type: "radio", options: [
+      opt("unwell", "unwell", 2), opt("okay", "okay", 5),
+      opt("healthy", "healthy", 8), opt("energetic", "energetic", 10),
   ]},
-  { id: "reading", order: 7, question: "how many pages did you read today?", type: "tier-radio",
-    tierScores: [1, 3, 5, 7, 8, 9, 10], options: [
-    opt("none", "i didn't read at all (0-10 pages)"),
-    opt("a-bit", "i read a bit (11-20 pages)"),
-    opt("decent", "i read a decent amount (21-40 pages)"),
-    opt("a-lot", "i read a lot (41-60 pages)"),
-    opt("on-a-roll", "i was on a roll (61-80 pages)"),
-    opt("almost-book", "i almost finished a book (81-100 pages)"),
-    opt("reading-machine", "i'm a reading machine (100+ pages!)"),
+  // Mental & Emotional
+  { id: "moodCheck", order: 7, question: "how are you feeling today?", type: "radio", options: [
+      opt("happy", "happy", 10), opt("energetic", "energetic", 9),
+      opt("okay", "okay", 6), opt("bored", "bored", 4),
+      opt("tired", "tired", 3), opt("anxious", "anxious", 3),
+      opt("sad", "sad", 2), opt("angry", "angry", 2), opt("lonely", "lonely", 2),
   ]},
-  { id: "sleep", order: 8, question: "when did you sleep and wake up?", type: "sleep" },
-  { id: "mood", order: 9, question: "how are you feeling today?", type: "radio", options: [
-    opt("happy", "i'm really happy"), opt("energetic", "i'm full of energy"),
-    opt("okay", "i'm just okay"), opt("bored", "i'm bored out of my mind"),
-    opt("tired", "i'm so tired"), opt("anxious", "i'm feeling anxious"),
-    opt("sad", "i'm feeling sad today"), opt("angry", "i'm lowkey angry"),
-    opt("lonely", "i'm feeling lonely"),
+  { id: "reading", order: 8, question: "how many pages did you read today?", type: "radio", options: [
+      opt("none", "none (0-10 pages)", 1), opt("a-bit", "a bit (11-20 pages)", 3),
+      opt("decent", "decent (21-30 pages)", 5), opt("a-lot", "a lot (31-40 pages)", 7),
+      opt("on-a-roll", "on a roll (41-50 pages)", 9), opt("bookworm", "bookworm (51+ pages)", 10),
   ]},
-  { id: "highlight", order: 10, question: "what was the highlight of your day?", type: "text", minChars: 20 },
-  { id: "improve", order: 11, question: "how could today have been better?", type: "text", minChars: 20 },
-  { id: "grateful", order: 12, question: "what am i grateful for today?", type: "text", minChars: 20 },
-  { id: "todayTasks", order: 13, question: "what's your daily plan looking like today?", type: "tasks" },
-  { id: "tomorrowPlan", order: 14, question: "what's your daily plan for tomorrow?", type: "tomorrow" },
-  { id: "bucketList", order: 15, question: "what's on my bucket list for this month?", type: "text", optional: true },
-  { id: "habits", order: 16, question: "what habit did you solidify today?", type: "habits" },
+  { id: "highlights", order: 9, question: "what was the highlight of your day?", type: "text", minChars: 50 },
+  { id: "couldHaveBeenBetter", order: 10, question: "how could today have been better?", type: "text", minChars: 50 },
+  { id: "storyOfTheDay", order: 11, question: "what's the story of your day?", type: "text", optional: true },
+  // Relationship Well-being
+  { id: "familyTime", order: 12, question: "did you spend time with your loved ones or people that are dear to you?", type: "radio", options: [
+      opt("yes", "yes", 8), opt("no", "no", 2),
+  ]},
+  { id: "conversations", order: 13, question: "did you have meaningful conversations today?", type: "radio", options: [
+      opt("yes", "yes", 8), opt("no", "no", 2),
+  ]},
+  { id: "kindnessActs", order: 14, question: "did you perform any acts of kindness today?", type: "radio", options: [
+      opt("yes", "yes", 8), opt("no", "no", 2),
+  ]},
+  { id: "connectionStatus", order: 15, question: "how connected do you feel?", type: "radio", options: [
+      opt("connected", "connected", 10), opt("neutral", "neutral", 5), opt("lonely", "lonely", 2),
+  ]},
+  // Work & Productivity
+  { id: "learnedToday", order: 16, question: "what did you learn today?", type: "text", minChars: 20 },
+  { id: "tasksFinished", order: 17, question: "what tasks did you finish?", type: "text", minChars: 20 },
+  { id: "deepWorkHours", order: 18, question: "how many hours of deep work did you do?", type: "tier-radio",
+    tierScores: [1, 4, 7, 9, 10], options: [
+      opt("0h", "0 hours"), opt("1h", "1 hour"), opt("2h", "2 hours"),
+      opt("3h", "3 hours"), opt("4h+", "4+ hours"),
+  ]},
+  { id: "workFeeling", order: 19, question: "how did work feel?", type: "radio", options: [
+      opt("focused", "focused", 10), opt("productive", "productive", 8),
+      opt("scattered", "scattered", 4), opt("drained", "drained", 2),
+  ]},
+  // Habits (unchanged)
+  { id: "habits", order: 20, question: "what habit did you solidify today?", type: "habits" },
 ];
 
 export function stepById(id: StepId): StepDef {
