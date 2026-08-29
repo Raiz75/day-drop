@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Dexie database definition and ALL persisted types for DayDrop.","IDD":[{"?":"date 'YYYY-MM-DD' is the entries primary key -> one entry per day."},{"?":"Meta rows are namespaced single-key documents: draft, aura:<uuid>, celebrated:<habitId> (legacy reward:* rows inert)."},{"!":"v2 adds DayEntry.activeHabitCount snapshot (active habits at submit time); v1 rows lack the field and habit scoring falls back to checked length"},{"?":"Versioned additive migrations only; never edit an existing store shape in place."}],"A":[{"!!!":"lib/db/repository.ts","CRITICAL":"repository is the ONLY writer; hooks read via useLiveQuery"},{"?":"lib/scoring.ts consumes DayEntry"},{"?":"components/journal/** consume StepId-typed fields"}],"AB":[{"?":"dexie"},{"?":"uuid"}],"E":[{"!!":"tests/schema.test.ts"},{"!!":"npm run build"},{"*":"version(2) stores strings must stay identical to version(1) - identical declaration = no-op upgrade"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Dexie database definition and ALL persisted types for DayDrop.","IDD":[{"?":"date 'YYYY-MM-DD' is the entries primary key -> one entry per day."},{"?":"Meta rows are namespaced single-key documents: draft, aura:<uuid>, celebrated:<habitId> (legacy reward:* rows inert)."},{"!":"v3 replaces 16-step journal fields with 4-category well-being fields (Physical, Mental, Social, Productivity). Old entries wiped."},{"?":"Versioned additive migrations only; never edit an existing store shape in place."}],"A":[{"!!!":"lib/db/repository.ts","CRITICAL":"repository is the ONLY writer; hooks read via useLiveQuery"},{"?":"lib/scoring.ts consumes DayEntry"},{"?":"components/journal/** consume StepId-typed fields"}],"AB":[{"?":"dexie"},{"?":"uuid"}],"E":[{"!!":"tests/schema.test.ts"},{"!!":"npm run build"},{"*":"version(3) stores identical to version(2) - schema change only, no index change"}]} */
 import Dexie, { type Table } from "dexie";
 import { v4 as uuidv4 } from "uuid";
 
@@ -6,24 +6,33 @@ export interface ChecklistItem { text: string; done: boolean }
 
 export interface DayEntry {
   date: string;
-  work: string;
-  health: string;
-  weather: string[];
-  stepsTier: number;
-  workouts: string[];
-  screenTimeTier: number;
-  readingTier: number;
-  sleptAt: string;
-  wokeAt: string;
-  mood: string;
-  highlight: string;
-  improve: string;
-  grateful: string;
-  todayTasks: ChecklistItem[];
-  tomorrowPlan: string[];
-  bucketList: string | null;
+  // Physical Well-being
+  sleepDuration: number;
+  exercise: string;
+  nutrition: string[];
+  hydration: number;
+  timeOutdoor: number;
+  physicalFeeling: string;
+  // Mental & Emotional
+  moodCheck: string;
+  reading: string;
+  highlights: string;
+  couldHaveBeenBetter: string;
+  storyOfTheDay: string | null;
+  // Relationship Well-being
+  familyTime: boolean;
+  conversations: boolean;
+  kindnessActs: boolean;
+  connectionStatus: string;
+  // Work & Productivity
+  learnedToday: string;
+  tasksFinished: string;
+  deepWorkHours: number;
+  workFeeling: string;
+  // Habits (unchanged)
   habitsChecked: string[];
   activeHabitCount: number;
+  // Meta
   createdAt: number;
   updatedAt: number;
 }
@@ -64,6 +73,11 @@ export class DayDropDB extends Dexie {
       meta: "key",
     });
     this.version(2).stores({
+      entries: "date",
+      habits: "id, archivedAt, startedOn",
+      meta: "key",
+    });
+    this.version(3).stores({
       entries: "date",
       habits: "id, archivedAt, startedOn",
       meta: "key",
