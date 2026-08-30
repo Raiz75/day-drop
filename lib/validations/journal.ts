@@ -1,13 +1,6 @@
-/* AI-CONTEXT-NOTE:{"R":"zod-backed validation for each wizard step AND full DayEntry schema; wizard Next button gates on validateStep, exportImport uses dayEntrySchema.","IDD":[{"?":"Dispatches on StepDef.type; option id membership comes live from STEPS config."},{"?":"Sleep window clamps: sleptAt 20:00-23:59, wokeAt 00:00-10:00 (no longer used, sleepDuration is tier-radio)."},{"!":"dayEntrySchema matches DayEntry in lib/db/schema.ts exactly."},{"?":"Optional text steps (storyOfTheDay) allow empty and normalize to null upstream."}],"A":[{"?":"components/journal/JournalWizard.tsx canAdvance"},{"!!":"lib/exportImport.ts full-entry validation"}],"AB":[{"?":"zod"},{"?":"lib/journal/steps.ts"},{"?":"lib/db/schema.ts DayEntry"}],"E":[{"!!":"tests/validations-journal.test.ts"},{"!!":"npm run build"}]} */
+/* AI-CONTEXT-NOTE:{"R":"zod-backed validation for each wizard step AND full DayEntry schema; wizard Next button gates on validateStep, exportImport uses dayEntrySchema.","IDD":[{"?":"Dispatches on StepDef.type; option id membership comes live from STEPS config."},{"!":"dayEntrySchema matches DayEntry in lib/db/schema.ts exactly."},{"?":"Optional text steps (storyOfTheDay) allow empty and normalize to null upstream."}],"A":[{"?":"components/journal/JournalWizard.tsx canAdvance"},{"!!":"lib/exportImport.ts full-entry validation"}],"AB":[{"?":"zod"},{"?":"lib/journal/steps.ts"},{"?":"lib/db/schema.ts DayEntry"}],"E":[{"!!":"tests/validations-journal.test.ts"},{"!!":"npm run build"}]} */
 import { z } from "zod";
 import type { StepDef } from "@/lib/journal/steps";
-
-const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-function minuteOf(t: string): number {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-}
 
 export function validateStep(
   step: StepDef,

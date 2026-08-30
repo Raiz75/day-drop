@@ -10,14 +10,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # What This App Is
 
-**DayDrop** — an offline-first, installable **PWA journal tracker** ("Your day, dropped in"). Every day the user completes a 16-step guided journaling wizard (work, health, sleep, mood, tasks, habits, reflections); answers are scored across 7 daily metrics (70 pts max/day) and visualized on a dashboard (heatmap, streaks, 30-day trend). Includes an aura-point pool (every 1500 pts unlocks a self-reward, redeemed as "+1 aura") and 100-day habit challenges. **No backend/auth — all data lives in browser IndexedDB via Dexie.**
+**DayDrop** — an offline-first, installable **PWA journal tracker** ("Your day, dropped in"). Every day the user completes a 20-step guided journaling wizard across 4 well-being categories (Physical, Mental, Social, Productivity); answers are scored across 4 daily metrics (40 pts max/day) and visualized on a dashboard (heatmap, streaks, 30-day trend). Includes an aura-point pool (every 1000 pts unlocks a self-reward, redeemed as "+1 aura") and 100-day habit challenges. **No backend/auth — all data lives in browser IndexedDB via Dexie.**
 
 ## Key Features
 
-- **Journal wizard** (`components/journal/`) — headless reducer state machine (`lib/journal/machine.ts`), validation-gated steps, draft autosave/resume, same-day edit; task checklist seeded from yesterday's tomorrow-plan with carry-over.
-- **Dashboard** (`/`) — month heatmap, flame streak, streak chips, trend chart, aura banner (X/1500 pts, Reward self at threshold, +1 aura toast), FAB launching the wizard.
+- **Journal wizard** (`components/journal/`) — headless reducer state machine (`lib/journal/machine.ts`), validation-gated steps, draft autosave/resume, same-day edit; category headers between step groups.
+- **Dashboard** (`/`) — month heatmap, flame streak, streak chips, trend chart, aura banner (X/1000 pts, Reward self at threshold, +1 aura toast), FAB launching the wizard.
 - **Habits** (`/habits`) — 100-day challenges, auto-archive ("Solidified") on day 100.
-- **Settings** (`/settings`) — aura collection card, JSON backup export/import v2 (zod-validated), theme toggle, SW update button.
+- **Settings** (`/settings`) — aura collection card, JSON backup export/import v3 (zod-validated), theme toggle, SW update button.
 - **PWA** — hand-written `public/sw.js` (cache-first shell, offline fallback, user-approved updates).
 
 ## Architecture Map
@@ -29,7 +29,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 | `lib/db/schema.ts` | Dexie DB `day-drop`: `entries` (keyed by date string), `habits`, `meta` |
 | `lib/db/repository.ts` | **Sole write path** for IndexedDB (incl. atomic `submitEntry`) |
 | `lib/hooks/` | Read-only reactive hooks (`useLiveQuery`) |
-| `lib/*.ts` | Pure domain core: scoring (incl. aura points), streaks, carryover, format, exportImport |
+| `lib/*.ts` | Pure domain core: scoring (incl. aura points), streaks, format, exportImport |
 | `lib/journal/steps.ts` | Single source of truth for wizard steps/options/points |
 | `tests/*.test.ts` | Vitest unit tests mirroring `lib/` modules |
 
@@ -40,7 +40,7 @@ Stack: Next.js (App Router) + React 19, TypeScript, Tailwind v4 + shadcn/ui (bas
 1. **Strict read/write split** — only `lib/db/repository.ts` writes to IndexedDB; components/hooks read exclusively via hooks and never write inside them.
 2. **Views early-return** `null` while hydrating / `<StorageUnavailable />` when IndexedDB is blocked — keep **all hooks before early returns**.
 3. **No setState-in-effect** (lint-enforced) — use `useSyncExternalStore`, promise-callback settling, or key-based remounts.
-4. **Dates persist as local `'YYYY-MM-DD'` strings**, times as `'HH:mm'`; overnight sleep wraps mod-24.
+4. **Dates persist as local `'YYYY-MM-DD'` strings**, times as `'HH:mm'`.
 5. **Wizard option ids are stable slugs** persisted in entries — labels change freely, changing an id requires a migration. Dexie migrations are versioned and additive only.
 6. **Version stamping** — `package.json` version is stamped into `lib/version.ts` and `sw.js` at build time; bump package.json only.
 7. Run `npm run build` to verify; run `npm test` (Vitest) for domain-logic changes.

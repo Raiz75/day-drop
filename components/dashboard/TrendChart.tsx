@@ -50,7 +50,7 @@ export function TrendChart({ entries }: { entries: DayEntry[] }) {
             axisLine={false}
             minTickGap={20}
           />
-          <YAxis domain={[0, 70]} hide />
+          <YAxis domain={[0, 40]} hide />
           <ChartTooltip content={<ChartTooltipContent hideLabel />} />
           <Line
             type="monotone"
