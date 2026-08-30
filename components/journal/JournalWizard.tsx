@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Full-screen journal wizard overlay: draft resume/autosave via repository, machine-driven navigation, submitEntry on Finish, celebration on day-100 archives.","IDD":[{"?":"Remounts fresh per open: outer component keys the inner flow by session so stale answers never leak across sessions"},{"?":"On mount: getDraft() try/catch - wrong-date or corrupt drafts are silently discarded, never crash; with no draft, today's submitted entry prefills for editing (createdAt preserved on resubmit)"},{"?":"Autosave is fire-and-forget and gated until draft hydration finished (never overwrites a draft it has not read)"},{"?":"Tier answers stay numeric indexes; sleep uses tier-radio for sleepDuration - UI never writes option-id strings into tier fields"},{"?":"storyOfTheDay '' -> null normalized at submit; createdAt preserved on same-day edit"},{"?":"entry.activeHabitCount is a type-satisfying placeholder - repository.submitEntry overwrites it with the active-habit snapshot from its arg"}],"A":[{"!!!":"components/dashboard/DashboardView.tsx mounts <JournalWizard open onOpenChange onSubmitted/>"}],"AB":[{"?":"lib/journal/machine.ts reducer/canAdvance/answerFor"},{"?":"lib/journal/steps.ts STEPS, CATEGORIES"},{"?":"lib/db/repository.ts getDraft/saveDraft/submitEntry/getTodayEntry/getLatestEntryBefore"},{"?":"components/journal/StepRenderer.tsx"},{"?":"components/journal/CelebrationScreen.tsx"},{"?":"components/journal/CategoryHeader.tsx"}],"E":[{"!!":"npm run build"},{"!!":"npm test tests/machine.test.ts pins machine behavior"},{"?":"Manual smoke: mid-wizard reload resumes draft; same-day edit prefills"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Full-screen journal wizard overlay: draft resume/autosave via repository, machine-driven navigation, submitEntry on Finish, celebration on day-100 archives.","IDD":[{"?":"Remounts fresh per open: outer component keys the inner flow by session so stale answers never leak across sessions"},{"?":"On mount: getDraft() try/catch - wrong-date or corrupt drafts are silently discarded, never crash; with no draft, today's submitted entry prefills for editing (createdAt preserved on resubmit)"},{"?":"Autosave is fire-and-forget and gated until draft hydration finished (never overwrites a draft it has not read)"},{"?":"Tier answers stay numeric indexes; sleep uses tier-radio for sleepDuration - UI never writes option-id strings into tier fields"},{"?":"storyOfTheDay '' -> null normalized at submit; createdAt preserved on same-day edit"},{"?":"entry.activeHabitCount is a type-satisfying placeholder - repository.submitEntry overwrites it with the active-habit snapshot from its arg"},{"?":"Category celebration fires on category boundary advancement via fireCategoryCelebration"}],"A":[{"!!!":"components/dashboard/DashboardView.tsx mounts <JournalWizard open onOpenChange onSubmitted/>"}],"AB":[{"?":"lib/journal/machine.ts reducer/canAdvance/answerFor"},{"?":"lib/journal/steps.ts STEPS, CATEGORIES, getCategoryForStep"},{"?":"lib/db/repository.ts getDraft/saveDraft/submitEntry/getTodayEntry/getLatestEntryBefore"},{"?":"components/journal/StepRenderer.tsx"},{"?":"components/journal/CelebrationScreen.tsx"},{"?":"components/journal/CategoryBanner.tsx"},{"?":"components/journal/ProgressDots.tsx"},{"?":"components/journal/CategoryCelebration.tsx"}],"E":[{"!!":"npm run build"},{"!!":"npm test tests/machine.test.ts pins machine behavior"},{"?":"Manual smoke: mid-wizard reload resumes draft; same-day edit prefills"}]} */
 "use client";
 
 import { useEffect, useReducer, useRef, useState } from "react";
@@ -7,6 +7,9 @@ import { IconArrowLeft, IconArrowRight, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { CelebrationScreen } from "./CelebrationScreen";
 import { StepRenderer } from "./StepRenderer";
+import { ProgressDots } from "./ProgressDots";
+import { CategoryBanner } from "./CategoryBanner";
+import { fireCategoryCelebration } from "./CategoryCelebration";
 import type { DayEntry, Habit } from "@/lib/db/schema";
 import {
   getDraft,
@@ -18,8 +21,7 @@ import {
 import { todayStr } from "@/lib/format";
 import { useActiveHabits } from "@/lib/hooks/useHabits";
 import { canAdvance, initialWizardState, reducer, answerFor } from "@/lib/journal/machine";
-import { STEPS, CATEGORIES } from "@/lib/journal/steps";
-import { CategoryHeader } from "./CategoryHeader";
+import { STEPS, CATEGORIES, getCategoryForStep } from "@/lib/journal/steps";
 import { cn } from "@/lib/utils";
 
 export interface JournalWizardProps {
@@ -112,11 +114,17 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
 
   const step = STEPS[state.stepIndex];
   const last = state.stepIndex === STEPS.length - 1;
-  const isFirstInCategory = CATEGORIES.some((c) => c.stepIds[0] === step.id);
-
   const handleNext = () => {
     if (!canAdvance(state)) return;
+    const currentCategory = getCategoryForStep(state.stepIndex);
     dispatch({ type: "next" });
+    // Fire celebration when crossing a category boundary
+    if (currentCategory) {
+      const nextCategory = getCategoryForStep(state.stepIndex + 1);
+      if (!nextCategory || nextCategory.id !== currentCategory.id) {
+        fireCategoryCelebration(currentCategory);
+      }
+    }
   };
 
   const handleFinish = async () => {
@@ -173,26 +181,26 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <header className="flex items-start gap-3 px-5 pt-5 pb-3">
-        <div className="flex flex-1 flex-col gap-3">
-          <ProgressDots current={state.stepIndex} total={STEPS.length} />
-          <h2 className="font-heading text-xl font-semibold leading-snug">{step.question}</h2>
+      <header className="sticky top-0 z-10 flex flex-col gap-3 bg-background px-5 pt-5 pb-3">
+        <div className="flex items-start gap-3">
+          <div className="flex flex-1 flex-col gap-3">
+            <CategoryBanner stepIndex={state.stepIndex} />
+            <ProgressDots currentStepIndex={state.stepIndex} />
+          </div>
+          <Button variant="ghost" size="icon-sm" aria-label="Close journal" onClick={onClose}>
+            <IconX className="size-5" />
+          </Button>
         </div>
-        <Button variant="ghost" size="icon-sm" aria-label="Close journal" onClick={onClose}>
-          <IconX className="size-5" />
-        </Button>
+        <h2 className="font-heading text-xl font-semibold leading-snug">{step.question}</h2>
       </header>
       <main className="flex-1 overflow-y-auto px-5 pb-6">
         {ready ? (
-          <>
-            {isFirstInCategory && <CategoryHeader stepId={step.id} />}
-            <StepRenderer
-              step={step}
-              answers={state.answers}
-              answerValue={answerFor(step.id, state.answers)}
-              onChange={(patch) => dispatch({ type: "answer", patch })}
-            />
-          </>
+          <StepRenderer
+            step={step}
+            answers={state.answers}
+            answerValue={answerFor(step.id, state.answers)}
+            onChange={(patch) => dispatch({ type: "answer", patch })}
+          />
         ) : null}
       </main>
       <footer className="flex items-center justify-between gap-3 border-t bg-background px-5 py-3">
@@ -224,22 +232,6 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
           }}
         />
       )}
-    </div>
-  );
-}
-
-function ProgressDots({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="flex items-center gap-1.5" aria-label={`step ${current + 1} of ${total}`}>
-      {Array.from({ length: total }, (_, i) => (
-        <span
-          key={i}
-          className={cn(
-            "size-2 rounded-full transition-colors",
-            i < current ? "bg-primary/70" : i === current ? "bg-primary ring-2 ring-primary/30" : "bg-muted",
-          )}
-        />
-      ))}
     </div>
   );
 }

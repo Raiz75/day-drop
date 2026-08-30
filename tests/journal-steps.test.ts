@@ -1,6 +1,6 @@
 /* AI-CONTEXT-NOTE:{"R":"Unit tests for lib/journal/steps.ts: step definitions, categories, option labels.","IDD":[],"A":[],"AB":["lib/journal/steps.ts"],"E":["npm test tests/journal-steps.test.ts"]} */
 import { describe, expect, it } from "vitest";
-import { STEPS, stepById, optionLabel, CATEGORIES } from "@/lib/journal/steps";
+import { STEPS, stepById, optionLabel, CATEGORIES, getCategoryForStep } from "@/lib/journal/steps";
 
 describe("steps config", () => {
   it("has exactly 20 ordered steps", () => {
@@ -96,5 +96,29 @@ describe("categories", () => {
   it("habits step exists but is not in any category", () => {
     const allCategoryStepIds = CATEGORIES.flatMap((c) => c.stepIds);
     expect(allCategoryStepIds).not.toContain("habits");
+  });
+
+  it("getCategoryForStep returns correct category for each step index", () => {
+    // Physical: indices 0-5
+    expect(getCategoryForStep(0)?.id).toBe("physical");
+    expect(getCategoryForStep(5)?.id).toBe("physical");
+    // Mental: indices 6-10
+    expect(getCategoryForStep(6)?.id).toBe("mental");
+    expect(getCategoryForStep(10)?.id).toBe("mental");
+    // Social: indices 11-14
+    expect(getCategoryForStep(11)?.id).toBe("social");
+    expect(getCategoryForStep(14)?.id).toBe("social");
+    // Productivity: indices 15-18
+    expect(getCategoryForStep(15)?.id).toBe("productivity");
+    expect(getCategoryForStep(18)?.id).toBe("productivity");
+    // Habits (index 19) is not in any category
+    expect(getCategoryForStep(19)).toBeUndefined();
+  });
+
+  it("each category has color and icon fields", () => {
+    for (const cat of CATEGORIES) {
+      expect(cat.color).toBeTruthy();
+      expect(cat.icon).toBeTruthy();
+    }
   });
 });

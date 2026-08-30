@@ -24,13 +24,15 @@ export interface CategoryDef {
   id: string;
   name: string;
   stepIds: StepId[];
+  color: string;
+  icon: string;
 }
 
 export const CATEGORIES: readonly CategoryDef[] = [
-  { id: "physical", name: "Physical Well-being", stepIds: ["sleepDuration", "exercise", "nutrition", "hydration", "timeOutdoor", "physicalFeeling"] },
-  { id: "mental", name: "Mental & Emotional", stepIds: ["moodCheck", "reading", "highlights", "couldHaveBeenBetter", "storyOfTheDay"] },
-  { id: "social", name: "Relationship Well-being", stepIds: ["familyTime", "conversations", "kindnessActs", "connectionStatus"] },
-  { id: "productivity", name: "Work & Productivity", stepIds: ["learnedToday", "tasksFinished", "deepWorkHours", "workFeeling"] },
+  { id: "physical", name: "Physical Well-being", stepIds: ["sleepDuration", "exercise", "nutrition", "hydration", "timeOutdoor", "physicalFeeling"], color: "emerald", icon: "IconRun" },
+  { id: "mental", name: "Mental & Emotional", stepIds: ["moodCheck", "reading", "highlights", "couldHaveBeenBetter", "storyOfTheDay"], color: "sky", icon: "IconBrain" },
+  { id: "social", name: "Relationship Well-being", stepIds: ["familyTime", "conversations", "kindnessActs", "connectionStatus"], color: "violet", icon: "IconHeart" },
+  { id: "productivity", name: "Work & Productivity", stepIds: ["learnedToday", "tasksFinished", "deepWorkHours", "workFeeling"], color: "amber", icon: "IconBolt" },
 ];
 
 const opt = (id: string, label: string, points?: number): StepOption => ({ id, label, points });
@@ -115,4 +117,10 @@ export function optionLabel(stepId: StepId, optionId: string): string {
   const o = stepById(stepId).options?.find((x) => x.id === optionId);
   if (!o) throw new Error(`unknown option ${optionId} on ${stepId}`);
   return o.label;
+}
+
+export function getCategoryForStep(stepIndex: number): CategoryDef | undefined {
+  const step = STEPS[stepIndex];
+  if (!step) return undefined;
+  return CATEGORIES.find((c) => c.stepIds.includes(step.id));
 }
