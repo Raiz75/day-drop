@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Pure date/time helpers; all persistence uses 'YYYY-MM-DD' strings and 'HH:mm' times.","IDD":[{"?":"Local time everywhere (no UTC shifts) - personal journal is single-timezone."},{"?":"sleepHours uses mod-24 wrap for overnight sleep."}],"A":[{"?":"lib/scoring.ts s8 banding"},{"?":"lib/streaks.ts"},{"?":"lib/db/repository.ts"},{"?":"dashboard components"}],"AB":[],"E":[{"!!":"tests/format.test.ts"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Pure date/time helpers; all persistence uses 'YYYY-MM-DD' strings and 'HH:mm' times.","IDD":[{"?":"Local time everywhere (no UTC shifts) - personal journal is single-timezone."}],"A":[{"?":"lib/streaks.ts"},{"?":"lib/db/repository.ts"},{"?":"dashboard components"}],"AB":[],"E":[{"!!":"tests/format.test.ts"}]} */
 
 export function toStr(d: Date): string {
   const y = d.getFullYear();
@@ -44,12 +44,4 @@ export function minutesToHHmm(min: number): string {
   const h = String(Math.floor(min / 60) % 24).padStart(2, "0");
   const m = String(min % 60).padStart(2, "0");
   return `${h}:${m}`;
-}
-
-export function sleepHours(sleptAt: string, wokeAt: string): number {
-  const slept = hhmmToMinutes(sleptAt);
-  const woke = hhmmToMinutes(wokeAt);
-  let mins = woke - slept;
-  if (mins <= 0) mins += 1440;
-  return mins / 60;
 }

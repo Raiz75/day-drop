@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addDays, diffDays, fromStr, hhmmToMinutes, monthKeyOf,
-  sleepHours, toStr, todayStr, minutesToHHmm, daysInMonth,
+  toStr, todayStr, minutesToHHmm, daysInMonth,
 } from "@/lib/format";
 
 describe("format", () => {
@@ -26,10 +26,5 @@ describe("format", () => {
   it("time helpers", () => {
     expect(hhmmToMinutes("22:30")).toBe(1350);
     expect(minutesToHHmm(1350)).toBe("22:30");
-  });
-  it("sleep hours wraps midnight", () => {
-    expect(sleepHours("22:30", "06:30")).toBe(8);
-    expect(sleepHours("23:00", "23:00")).toBe(24);
-    expect(sleepHours("20:00", "10:00")).toBe(14);
   });
 });
