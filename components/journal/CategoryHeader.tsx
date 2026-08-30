@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Renders category section header in journal wizard.","IDD":[],"A":["components/journal/JournalWizard.tsx"],"AB":["lib/journal/steps.ts"],"E":["npm run build"]} */
+/* AI-CONTEXT-NOTE:{"R":"DEPRECATED - previously rendered category section header in journal wizard. Replaced by CategoryBanner. Keep for potential future use or remove.","IDD":[],"A":[],"AB":["lib/journal/steps.ts"],"E":["npm run build"]} */
 "use client";
 
 import { CATEGORIES, type StepId } from "@/lib/journal/steps";
