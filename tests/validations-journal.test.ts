@@ -21,9 +21,19 @@ describe("validateStep", () => {
     expect(validateStep(stepById("highlights"), "this is definitely long enough to meet the fifty character minimum requirement").ok).toBe(true);
     expect(validateStep(stepById("storyOfTheDay"), "").ok).toBe(true);
   });
-  it("tasksFinished requires >=20 chars", () => {
-    expect(validateStep(stepById("tasksFinished"), "").ok).toBe(false);
-    expect(validateStep(stepById("tasksFinished"), "ship MVP").ok).toBe(false);
-    expect(validateStep(stepById("tasksFinished"), "completed the main task for today").ok).toBe(true);
+  it("tasks-checklist accepts any string array", () => {
+    expect(validateStep(stepById("taskForToday"), []).ok).toBe(true);
+    expect(validateStep(stepById("taskForToday"), ["fix bug", "ship feature"]).ok).toBe(true);
+    expect(validateStep(stepById("taskForToday"), [123]).ok).toBe(false);
+  });
+  it("tasks-list requires non-empty array of non-empty strings", () => {
+    expect(validateStep(stepById("taskForTomorrow"), []).ok).toBe(false);
+    expect(validateStep(stepById("taskForTomorrow"), ["write tests"]).ok).toBe(true);
+    expect(validateStep(stepById("taskForTomorrow"), [""]).ok).toBe(false);
+  });
+  it("bucket-list accepts any string array", () => {
+    expect(validateStep(stepById("monthBucketList"), []).ok).toBe(true);
+    expect(validateStep(stepById("monthBucketList"), ["read 5 books"]).ok).toBe(true);
+    expect(validateStep(stepById("monthBucketList"), [42]).ok).toBe(false);
   });
 });
