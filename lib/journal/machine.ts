@@ -46,11 +46,14 @@ export function canAdvance(state: WizardState): boolean {
   if (!step) return false;
   const raw = answerFor(step.id, state.answers);
   // Tier answers are stored as numeric indexes (Partial<DayEntry>); translate
-  // to the option id validateStep expects. Strings/out-of-range pass through.
-  const value =
-    step.type === "tier-radio" && typeof raw === "number" && Number.isInteger(raw)
-      ? step.options?.[raw]?.id
-      : raw;
+  // to the option id validateStep expects. Booleans (yes/no radio) translate
+  // to "yes"/"no" option ids. Strings pass through.
+  let value: unknown = raw;
+  if (step.type === "tier-radio" && typeof raw === "number" && Number.isInteger(raw)) {
+    value = step.options?.[raw]?.id;
+  } else if (typeof raw === "boolean") {
+    value = raw ? "yes" : "no";
+  }
   return validateStep(step, value).ok;
 }
 
