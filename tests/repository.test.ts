@@ -65,7 +65,7 @@ vi.mock("@/lib/db/schema", async (importOriginal) => {
 import {
   addHabit, clearDraft, deleteHabit,
   getDraft, getLatestEntryBefore, getTodayEntry, redeemAura, renameHabit, saveDraft,
-  submitEntry,
+  submitEntry, getBucketList, saveBucketList, updateBucketListItem,
 } from "@/lib/db/repository";
 
 const TODAY = "2026-08-23";
@@ -78,7 +78,8 @@ function fullEntry(date: string): Parameters<typeof submitEntry>[0] {
     moodCheck: "happy", reading: "bookworm", highlights: "x".repeat(25),
     couldHaveBeenBetter: "y".repeat(25), storyOfTheDay: "z".repeat(25),
     familyTime: true, conversations: true, kindnessActs: true, connectionStatus: "connected",
-    learnedToday: "a".repeat(10), tasksFinished: "b".repeat(10),
+    learnedToday: "a".repeat(10),
+    tasksForToday: [], tasksChecked: [], tasksForTomorrow: [], bucketListChecked: [],
     deepWorkHours: 4, workFeeling: "focused",
     habitsChecked: ["any"], activeHabitCount: 1, createdAt: 1, updatedAt: 1,
   };
@@ -153,5 +154,40 @@ describe("redeemAura", () => {
     await redeemAura();
     rows = [...mockDb.meta.__map.values()];
     expect(rows).toHaveLength(2);
+  });
+});
+
+describe("bucket list", () => {
+  const monthKey = "2026-08";
+  it("getBucketList returns empty array when none saved", async () => {
+    const items = await getBucketList(monthKey);
+    expect(items).toEqual([]);
+  });
+  it("saveBucketList stores items and getBucketList retrieves them", async () => {
+    const items = [{ text: "visit Paris", done: false, doneAt: null }];
+    await saveBucketList(monthKey, items);
+    const retrieved = await getBucketList(monthKey);
+    expect(retrieved).toEqual(items);
+  });
+  it("updateBucketListItem toggles done and sets doneAt", async () => {
+    const items = [
+      { text: "learn Spanish", done: false, doneAt: null },
+      { text: "run marathon", done: false, doneAt: null },
+    ];
+    await saveBucketList(monthKey, items);
+    await updateBucketListItem(monthKey, "learn Spanish", true);
+    const updated = await getBucketList(monthKey);
+    expect(updated[0].done).toBe(true);
+    expect(updated[0].doneAt).toBeTypeOf("string");
+    expect(updated[0].doneAt).not.toBeNull();
+    expect(updated[1].done).toBe(false);
+  });
+  it("updateBucketListItem with done=false clears doneAt", async () => {
+    const items = [{ text: "write a book", done: true, doneAt: "2026-08-01T12:00:00.000Z" }];
+    await saveBucketList(monthKey, items);
+    await updateBucketListItem(monthKey, "write a book", false);
+    const updated = await getBucketList(monthKey);
+    expect(updated[0].done).toBe(false);
+    expect(updated[0].doneAt).toBeNull();
   });
 });
