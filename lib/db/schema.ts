@@ -1,8 +1,18 @@
-/* AI-CONTEXT-NOTE:{"R":"Dexie database definition and ALL persisted types for DayDrop.","IDD":[{"?":"date 'YYYY-MM-DD' is the entries primary key -> one entry per day."},{"?":"Meta rows are namespaced single-key documents: draft, aura:<uuid>, celebrated:<habitId> (legacy reward:* rows inert)."},{"!":"v3 replaces 16-step journal fields with 4-category well-being fields (Physical, Mental, Social, Productivity). Old entries wiped."},{"?":"Versioned additive migrations only; never edit an existing store shape in place."}],"A":[{"!!!":"lib/db/repository.ts","CRITICAL":"repository is the ONLY writer; hooks read via useLiveQuery"},{"?":"lib/scoring.ts consumes DayEntry"},{"?":"components/journal/** consume StepId-typed fields"}],"AB":[{"?":"dexie"},{"?":"uuid"}],"E":[{"!!":"tests/schema.test.ts"},{"!!":"npm run build"},{"*":"version(3) stores identical to version(2) - schema change only, no index change"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Dexie database definition and ALL persisted types for DayDrop.","IDD":[{"?":"date 'YYYY-MM-DD' is the entries primary key -> one entry per day."},{"?":"Meta rows are namespaced single-key documents: draft, aura:<uuid>, celebrated:<habitId> (legacy reward:* rows inert)."},{"!":"v4 adds tasks/bucket list fields to DayEntry (tasksForToday, tasksChecked, tasksForTomorrow, bucketListChecked). Removes tasksFinished."},{"?":"BucketListItem and BucketListMonth types for bucket list feature."},{"?":"Versioned additive migrations only; never edit an existing store shape in place."}],"A":[{"!!!":"lib/db/repository.ts","CRITICAL":"repository is the ONLY writer; hooks read via useLiveQuery"},{"?":"lib/scoring.ts consumes DayEntry"},{"?":"components/journal/** consume StepId-typed fields"}],"AB":[{"?":"dexie"},{"?":"uuid"}],"E":[{"!!":"tests/schema.test.ts"},{"!!":"npm run build"},{"*":"version(4) stores identical to version(3) - schema change only, no index change"}]} */
 import Dexie, { type Table } from "dexie";
 import { v4 as uuidv4 } from "uuid";
 
 export interface ChecklistItem { text: string; done: boolean }
+
+export interface BucketListItem {
+  text: string;
+  done: boolean;
+  doneAt: string | null;
+}
+
+export interface BucketListMonth {
+  items: BucketListItem[];
+}
 
 export interface DayEntry {
   date: string;
@@ -26,10 +36,14 @@ export interface DayEntry {
   connectionStatus: string;
   // Work & Productivity
   learnedToday: string;
-  tasksFinished: string;
   deepWorkHours: number;
   workFeeling: string;
-  // Habits (unchanged)
+  // Habits and plans
+  tasksForToday: string[];
+  tasksChecked: string[];
+  tasksForTomorrow: string[];
+  bucketListChecked: string[];
+  // Habits
   habitsChecked: string[];
   activeHabitCount: number;
   // Meta
@@ -78,6 +92,11 @@ export class DayDropDB extends Dexie {
       meta: "key",
     });
     this.version(3).stores({
+      entries: "date",
+      habits: "id, archivedAt, startedOn",
+      meta: "key",
+    });
+    this.version(4).stores({
       entries: "date",
       habits: "id, archivedAt, startedOn",
       meta: "key",

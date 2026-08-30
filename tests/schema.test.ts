@@ -11,7 +11,7 @@ describe("schema keys", () => {
   });
 });
 
-describe("v3 schema", () => {
+describe("v4 schema", () => {
   it("entries, habits, and meta tables exist and accept data", async () => {
     await db.entries.add({
       date: "2026-01-01",
@@ -31,9 +31,12 @@ describe("v3 schema", () => {
       kindnessActs: true,
       connectionStatus: "connected",
       learnedToday: "a".repeat(30),
-      tasksFinished: "b".repeat(30),
       deepWorkHours: 4,
       workFeeling: "focused",
+      tasksForToday: [],
+      tasksChecked: [],
+      tasksForTomorrow: [],
+      bucketListChecked: [],
       habitsChecked: [],
       activeHabitCount: 0,
       createdAt: 0,
@@ -70,9 +73,12 @@ describe("v3 schema", () => {
       kindnessActs: true,
       connectionStatus: "connected",
       learnedToday: "a".repeat(30),
-      tasksFinished: "b".repeat(30),
       deepWorkHours: 4,
       workFeeling: "focused",
+      tasksForToday: [],
+      tasksChecked: [],
+      tasksForTomorrow: [],
+      bucketListChecked: [],
       habitsChecked: [],
       activeHabitCount: 0,
       createdAt: 0,
