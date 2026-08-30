@@ -31,17 +31,18 @@ Make categories prominent and always visible, with a satisfying milestone moment
 ```
 
 **Category colors:**
-| Category | Color accent | Icon |
+| Category | Color accent | Icon (tabler-icons-react) |
 |----------|-------------|------|
-| Physical Well-being | Green (`emerald`) | 🏋️ |
-| Mental & Emotional | Blue (`sky`) | 🧠 |
-| Relationship Well-being | Purple (`violet`) | 💜 |
-| Work & Productivity | Amber (`amber`) | ⚡ |
+| Physical Well-being | Green (`emerald`) | `IconRun` |
+| Mental & Emotional | Blue (`sky`) | `IconBrain` |
+| Relationship Well-being | Purple (`violet`) | `IconHeart` |
+| Work & Productivity | Amber (`amber`) | `IconBolt` |
 
 **Behavior:**
 - Banner is sticky at top of wizard overlay
 - When switching categories: banner background color morphs (CSS transition ~300ms), icon + name crossfade
 - Category name is large, bold, visually dominant over the question
+- Icon rendered via tabler-icons-react, sized to match heading
 - The question sits below the banner, still readable but visually grouped under its category
 
 ### 2. Progress Dots with Milestone Markers
@@ -70,7 +71,7 @@ Make categories prominent and always visible, with a satisfying milestone moment
 **Sequence:**
 1. User clicks "Next" on the last step of a category
 2. Canvas-based confetti burst fires (top-center of wizard, ~80 particles, 800ms duration)
-3. Toast appears: "Physical Well-being — Done!" with category icon
+3. Toast appears: "Physical Well-being — Done!" with category's tabler icon
 4. Banner animates to next category color
 5. Next category's first question loads
 
@@ -100,7 +101,7 @@ export interface CategoryDef {
   name: string;
   stepIds: StepId[];
   color: string;   // tailwind color name (emerald, sky, violet, amber)
-  icon: string;    // emoji
+  icon: string;    // tabler-icons-react icon component name (e.g. "IconRun", "IconBrain")
 }
 ```
 
