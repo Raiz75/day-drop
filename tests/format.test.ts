@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  addDays, diffDays, fromStr, hhmmToMinutes, monthKeyOf,
+  addDays, dayOfMonth, diffDays, fromStr, hhmmToMinutes, monthKeyOf,
   toStr, todayStr, minutesToHHmm, daysInMonth,
 } from "@/lib/format";
 
@@ -16,6 +16,11 @@ describe("format", () => {
     expect(addDays("2026-01-01", -1)).toBe("2025-12-31");
     expect(diffDays("2026-08-23", "2026-08-20")).toBe(3);
     expect(diffDays("2026-08-20", "2026-08-23")).toBe(-3);
+  });
+  it("dayOfMonth returns day of month", () => {
+    expect(dayOfMonth("2026-08-01")).toBe(1);
+    expect(dayOfMonth("2026-08-15")).toBe(15);
+    expect(dayOfMonth("2026-12-31")).toBe(31);
   });
   it("month keys and lengths", () => {
     expect(monthKeyOf("2026-08-23")).toBe("2026-08");
