@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, aura banner, heatmap calendar, streak chips, 30-day trend, daily tasks checklist, monthly bucket list, DayDetailSheet for picked days, Fab + JournalWizard mount, BottomNav.","IDD":[{"?":"balance = pointsBalance(all entries, auraCount) recomputed live - never stored"},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration effect mounts here in production only; public/sw.js + public/manifest.webmanifest back it."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."},{"?":"DailyTasksChecklist reads tasksForToday/tasksChecked from today's entry; onToggle calls updateEntry."},{"?":"MonthBucketList reads bucket list items via useBucketList; onToggle updates both meta and today's bucketListChecked."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes balance/auraCount/onRedeem this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DailyTasksChecklist/MonthBucketList/DayDetailSheet"}],"AB":[{"?":"lib/hooks/useEntries.ts + useAura.ts"},{"?":"lib/db/repository.ts redeemAura, updateEntry, updateBucketListItem"},{"?":"lib/scoring.ts pointsBalance"},{"?":"lib/streaks.ts allStreaks"},{"?":"components/journal/JournalWizard.tsx"},{"?":"components/shared/BottomNav.tsx fixed height dictates pb-20 shell padding"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> banner X/1000 grows; at 1000 'Reward self' -> +1 aura toast"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, aura banner, heatmap calendar, streak chips, 30-day trend, daily tasks checklist, monthly bucket list, DayDetailSheet for picked days, BucketListTransferDialog for month-end, Fab + JournalWizard mount, BottomNav.","IDD":[{"?":"balance = pointsBalance(all entries, auraCount) recomputed live - never stored"},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration effect mounts here in production only; public/sw.js + public/manifest.webmanifest back it."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."},{"?":"DailyTasksChecklist reads tasksForToday/tasksChecked from today's entry; onToggle calls updateEntry."},{"?":"MonthBucketList reads bucket list items via useBucketList; onToggle updates both meta and today's bucketListChecked."},{"?":"BucketListTransferDialog shown once per month when previous month has unchecked items; transferChecked flag prevents re-show."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes balance/auraCount/onRedeem this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DailyTasksChecklist/MonthBucketList/DayDetailSheet/BucketListTransferDialog"}],"AB":[{"?":"lib/hooks/useEntries.ts + useAura.ts + useBucketList.ts"},{"?":"lib/db/repository.ts redeemAura, updateEntry, updateBucketListItem"},{"?":"lib/scoring.ts pointsBalance"},{"?":"lib/streaks.ts allStreaks"},{"?":"components/journal/JournalWizard.tsx"},{"?":"components/shared/BottomNav.tsx fixed height dictates pb-20 shell padding"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> banner X/1000 grows; at 1000 'Reward self' -> +1 aura toast"},{"?":"Manual smoke: open in new month with unchecked prev items -> transfer dialog appears once"}]} */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -17,10 +17,12 @@ import { TrendChart } from "./TrendChart";
 import { DailyTasksChecklist } from "./DailyTasksChecklist";
 import { MonthBucketList } from "./MonthBucketList";
 import { DayDetailSheet } from "./DayDetailSheet";
+import { BucketListTransferDialog } from "./BucketListTransferDialog";
 import { todayStr, fromStr, monthKeyOf } from "@/lib/format";
 import { redeemAura, updateEntry, updateBucketListItem } from "@/lib/db/repository";
 import { useEntries } from "@/lib/hooks/useEntries";
 import { useAuraRecords } from "@/lib/hooks/useAura";
+import { useBucketList } from "@/lib/hooks/useBucketList";
 import { useStorageAvailable } from "@/lib/hooks/useHydrated";
 import { allStreaks } from "@/lib/streaks";
 import { pointsBalance } from "@/lib/scoring";
@@ -36,13 +38,30 @@ export function DashboardView() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
 
+  const today = todayStr();
+  const currentMonthKey = monthKeyOf(today);
+  const [yearStr, monthStr] = currentMonthKey.split("-");
+  const prevYear = monthStr === "01" ? Number(yearStr) - 1 : Number(yearStr);
+  const prevMonth = monthStr === "01" ? "12" : String(Number(monthStr) - 1).padStart(2, "0");
+  const previousMonthKey = `${prevYear}-${prevMonth}`;
+  const prevBucketList = useBucketList(previousMonthKey);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferChecked, setTransferChecked] = useState(false);
+
   useEffect(() => {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
   }, []);
 
-  const today = todayStr();
+  useEffect(() => {
+    if (transferChecked || prevBucketList === undefined) return;
+    const unchecked = prevBucketList.filter((i) => !i.done);
+    if (unchecked.length > 0 && currentMonthKey !== previousMonthKey) {
+      setTransferOpen(true);
+    }
+    setTransferChecked(true);
+  }, [prevBucketList, currentMonthKey, previousMonthKey, transferChecked]);
 
   const streaks = useMemo<Streaks>(
     () => (entries ? allStreaks(entries, today) : ZERO_STREAKS),
@@ -116,6 +135,12 @@ export function DashboardView() {
         onOpenChange={(o) => {
           if (!o) setPickedDate(null);
         }}
+      />
+      <BucketListTransferDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        currentMonthKey={currentMonthKey}
+        uncheckedItems={(prevBucketList ?? []).filter((i) => !i.done).map((i) => i.text)}
       />
       <BottomNav />
     </div>
