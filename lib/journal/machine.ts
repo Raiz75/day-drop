@@ -31,9 +31,11 @@ const FIELD_BY_STEP: Record<StepId, keyof DayEntry> = {
   kindnessActs: "kindnessActs",
   connectionStatus: "connectionStatus",
   learnedToday: "learnedToday",
-  tasksFinished: "tasksFinished",
   deepWorkHours: "deepWorkHours",
   workFeeling: "workFeeling",
+  taskForToday: "tasksForToday",
+  taskForTomorrow: "tasksForTomorrow",
+  monthBucketList: "bucketListChecked",
   habits: "habitsChecked",
 };
 

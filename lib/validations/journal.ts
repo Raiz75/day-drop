@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"zod-backed validation for each wizard step AND full DayEntry schema; wizard Next button gates on validateStep, exportImport uses dayEntrySchema.","IDD":[{"?":"Dispatches on StepDef.type; option id membership comes live from STEPS config."},{"!":"dayEntrySchema matches DayEntry in lib/db/schema.ts exactly."},{"?":"Optional text steps (storyOfTheDay) allow empty and normalize to null upstream."}],"A":[{"?":"components/journal/JournalWizard.tsx canAdvance"},{"!!":"lib/exportImport.ts full-entry validation"}],"AB":[{"?":"zod"},{"?":"lib/journal/steps.ts"},{"?":"lib/db/schema.ts DayEntry"}],"E":[{"!!":"tests/validations-journal.test.ts"},{"!!":"npm run build"}]} */
+/* AI-CONTEXT-NOTE:{"R":"zod-backed validation for each wizard step AND full DayEntry schema; wizard Next button gates on validateStep, exportImport uses dayEntrySchema.","IDD":[{"?":"Dispatches on StepDef.type; option id membership comes live from STEPS config."},{"!":"dayEntrySchema matches DayEntry in lib/db/schema.ts exactly."},{"?":"Optional text steps (storyOfTheDay) allow empty and normalize to null upstream."},{"?":"tasks-checklist validates array of strings (checkboxes for today)."},{"?":"tasks-list validates non-empty array of non-empty strings (tomorrow tasks)."},{"?":"bucket-list validates array of strings (monthly bucket items)."}],"A":[{"?":"components/journal/JournalWizard.tsx canAdvance"},{"!!":"lib/exportImport.ts full-entry validation"}],"AB":[{"?":"zod"},{"?":"lib/journal/steps.ts"},{"?":"lib/db/schema.ts DayEntry"}],"E":[{"!!":"tests/validations-journal.test.ts"},{"!!":"npm run build"}]} */
 import { z } from "zod";
 import type { StepDef } from "@/lib/journal/steps";
 
@@ -32,6 +32,21 @@ export function validateStep(
       const r = z.array(z.string().min(1)).safeParse(value);
       return r.success ? { ok: true } : { ok: false, error: "invalid habit list" };
     }
+    case "tasks-checklist": {
+      const r = z.array(z.string()).safeParse(value);
+      return r.success ? { ok: true } : { ok: false, error: "invalid task list" };
+    }
+    case "tasks-list": {
+      const r = z.array(z.string().min(1)).safeParse(value);
+      if (!r.success || r.data.length === 0) {
+        return { ok: false, error: "add at least one task" };
+      }
+      return { ok: true };
+    }
+    case "bucket-list": {
+      const r = z.array(z.string()).safeParse(value ?? []);
+      return r.success ? { ok: true } : { ok: false, error: "invalid bucket list" };
+    }
   }
 }
 
@@ -57,9 +72,13 @@ export const dayEntrySchema = z.object({
   connectionStatus: z.enum(["connected", "neutral", "lonely"]),
   // Work & Productivity
   learnedToday: z.string().min(20),
-  tasksFinished: z.string().min(20),
   deepWorkHours: z.number().int().min(0).max(4),
   workFeeling: z.enum(["focused", "scattered", "productive", "drained"]),
+  // Habits and plans
+  tasksForToday: z.array(z.string()),
+  tasksChecked: z.array(z.string()),
+  tasksForTomorrow: z.array(z.string()),
+  bucketListChecked: z.array(z.string()),
   // Habits
   habitsChecked: z.array(z.string()),
   activeHabitCount: z.number().int().min(0),

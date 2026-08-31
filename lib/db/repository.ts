@@ -1,7 +1,8 @@
-/* AI-CONTEXT-NOTE:{"R":"Sole write path to IndexedDB: entries, habits, meta (drafts/aura).","IDD":[{"?":"Every mutation is an exported async fn; components/hooks NEVER touch db.write directly."},{"?":"submitEntry runs atomically: entry upsert + draft clear + habit day-100 auto-archive."},{"!":"submitEntry stamps entries.activeHabitCount from its activeHabitIds arg - the per-day scoring snapshot"},{"?":"redeemAura appends an aura:<uuid> meta row; balance math lives in lib/scoring.pointsBalance"},{"?":"Day-100 archive is calendar-based: archivedAt set when entry.date == startedOn+99d."}],"A":[{"!!!":"lib/hooks/*.ts consume these; never call from inside useLiveQuery"},{"?":"components/journal/JournalWizard.tsx submit flow"},{"?":"components/dashboard/DashboardView.tsx redeem flow"}],"AB":[{"?":"lib/db/schema.ts"},{"?":"lib/format.ts addDays/todayStr"}],"E":[{"!!":"tests/repository.test.ts"},{"!!":"npm run build"},{"!!":"redeemAura writes exactly one row per call"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Sole write path to IndexedDB: entries, habits, meta (drafts/aura, bucket list).","IDD":[{"?":"Every mutation is an exported async fn; components/hooks NEVER touch db.write directly."},{"?":"submitEntry runs atomically: entry upsert + draft clear + habit day-100 auto-archive."},{"!":"submitEntry stamps entries.activeHabitCount from its activeHabitIds arg - the per-day scoring snapshot"},{"?":"redeemAura appends an aura:<uuid> meta row; balance math lives in lib/scoring.pointsBalance"},{"?":"Day-100 archive is calendar-based: archivedAt set when entry.date == startedOn+99d."},{"?":"Bucket list items stored in meta under key bucketList:<monthKey>."}],"A":[{"!!!":"lib/hooks/*.ts consume these; never call from inside useLiveQuery"},{"?":"components/journal/JournalWizard.tsx submit flow"},{"?":"components/dashboard/DashboardView.tsx redeem flow"},{"?":"components/bucket-list/* (future)"}],"AB":[{"?":"lib/db/schema.ts"},{"?":"lib/format.ts addDays/todayStr"}],"E":[{"!!":"tests/repository.test.ts"},{"!!":"npm run build"},{"!!":"redeemAura writes exactly one row per call"}]} */
 import {
   db, DRAFT_KEY, newId, auraKey,
   type DayEntry, type Habit, type JournalDraft,
+  type BucketListItem, type BucketListMonth,
 } from "@/lib/db/schema";
 import { addDays, todayStr } from "@/lib/format";
 
@@ -73,6 +74,34 @@ export function getActiveHabits(): Promise<Habit[]> {
 
 export function getArchivedHabits(): Promise<Habit[]> {
   return db.habits.filter((h) => h.archivedAt !== null).toArray();
+}
+
+function bucketListKey(monthKey: string): string {
+  return `bucketList:${monthKey}`;
+}
+
+export async function getBucketList(monthKey: string): Promise<BucketListItem[]> {
+  const row = await db.meta.get(bucketListKey(monthKey));
+  const bl = row?.value as BucketListMonth | undefined;
+  return bl?.items ?? [];
+}
+
+export async function saveBucketList(monthKey: string, items: BucketListItem[]): Promise<void> {
+  await putMeta(bucketListKey(monthKey), { items } satisfies BucketListMonth);
+}
+
+export async function updateBucketListItem(monthKey: string, itemText: string, done: boolean): Promise<void> {
+  const items = await getBucketList(monthKey);
+  const updated = items.map((item) =>
+    item.text === itemText
+      ? { ...item, done, doneAt: done ? new Date().toISOString() : null }
+      : item
+  );
+  await saveBucketList(monthKey, updated);
+}
+
+export async function updateEntry(date: string, patch: Partial<Omit<DayEntry, "date">>): Promise<void> {
+  await db.entries.update(date, patch);
 }
 
 export async function redeemAura(): Promise<void> {

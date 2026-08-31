@@ -1,10 +1,11 @@
-/* AI-CONTEXT-NOTE:{"R":"Single source of truth for the 20 wizard steps across 4 categories: question copy, option ids/labels, tier scores, validation hints.","IDD":[{"?":"Option ids are stable slugs persisted in entries; labels may change freely."},{"?":"points on options feed lib/scoring.ts; tierScores are per-tier arrays."},{"?":"CATEGORIES defines the 4-category structure for the journal redesign."}],"A":[{"!!!":"lib/scoring.ts","CRITICAL":"scoring maps hard-code these option ids"},{"?":"components/journal/** renders this config"}],"AB":[],"E":[{"!!":"tests/journal-steps.test.ts"},{"?":"Changing an option id requires a data migration"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Single source of truth for the 22 wizard steps across 5 categories: question copy, option ids/labels, tier scores, validation hints.","IDD":[{"?":"Option ids are stable slugs persisted in entries; labels may change freely."},{"?":"points on options feed lib/scoring.ts; tierScores are per-tier arrays."},{"?":"CATEGORIES defines the 5-category structure for the journal redesign."},{"?":"New step types: tasks-checklist, tasks-list, bucket-list added."}],"A":[{"!!!":"lib/scoring.ts","CRITICAL":"scoring maps hard-code these option ids"},{"?":"components/journal/** renders this config"}],"AB":[],"E":[{"!!":"tests/journal-steps.test.ts"},{"?":"Changing an option id requires a data migration"}]} */
 
 export type StepId =
   | "sleepDuration" | "exercise" | "nutrition" | "hydration" | "timeOutdoor" | "physicalFeeling"
   | "moodCheck" | "reading" | "highlights" | "couldHaveBeenBetter" | "storyOfTheDay"
   | "familyTime" | "conversations" | "kindnessActs" | "connectionStatus"
-  | "learnedToday" | "tasksFinished" | "deepWorkHours" | "workFeeling"
+  | "learnedToday" | "deepWorkHours" | "workFeeling"
+  | "taskForToday" | "taskForTomorrow" | "monthBucketList"
   | "habits";
 
 export interface StepOption { id: string; label: string; points?: number }
@@ -13,7 +14,7 @@ export interface StepDef {
   id: StepId;
   order: number;
   question: string;
-  type: "radio" | "checkbox" | "tier-radio" | "text" | "habits";
+  type: "radio" | "checkbox" | "tier-radio" | "text" | "habits" | "tasks-checklist" | "tasks-list" | "bucket-list";
   options?: StepOption[];
   tierScores?: number[];
   minChars?: number;
@@ -32,7 +33,8 @@ export const CATEGORIES: readonly CategoryDef[] = [
   { id: "physical", name: "Physical Well-being", stepIds: ["sleepDuration", "exercise", "nutrition", "hydration", "timeOutdoor", "physicalFeeling"], color: "emerald", icon: "IconRun" },
   { id: "mental", name: "Mental & Emotional", stepIds: ["moodCheck", "reading", "highlights", "couldHaveBeenBetter", "storyOfTheDay"], color: "sky", icon: "IconBrain" },
   { id: "social", name: "Relationship Well-being", stepIds: ["familyTime", "conversations", "kindnessActs", "connectionStatus"], color: "violet", icon: "IconHeart" },
-  { id: "productivity", name: "Work & Productivity", stepIds: ["learnedToday", "tasksFinished", "deepWorkHours", "workFeeling"], color: "amber", icon: "IconBolt" },
+  { id: "productivity", name: "Work & Productivity", stepIds: ["learnedToday", "deepWorkHours", "workFeeling"], color: "amber", icon: "IconBolt" },
+  { id: "habits-plans", name: "Habits and plans", stepIds: ["taskForToday", "taskForTomorrow", "monthBucketList", "habits"], color: "rose", icon: "IconCalendarCheck" },
 ];
 
 const opt = (id: string, label: string, points?: number): StepOption => ({ id, label, points });
@@ -93,18 +95,20 @@ export const STEPS: readonly StepDef[] = [
   ]},
   // Work & Productivity
   { id: "learnedToday", order: 16, question: "what did you learn today?", type: "text", minChars: 20 },
-  { id: "tasksFinished", order: 17, question: "what tasks did you finish?", type: "text", minChars: 20 },
-  { id: "deepWorkHours", order: 18, question: "how many hours of deep work did you do?", type: "tier-radio",
+  { id: "deepWorkHours", order: 17, question: "how many hours of deep work did you do?", type: "tier-radio",
     tierScores: [1, 4, 7, 9, 10], options: [
       opt("0h", "0 hours"), opt("1h", "1 hour"), opt("2h", "2 hours"),
       opt("3h", "3 hours"), opt("4h+", "4+ hours"),
   ]},
-  { id: "workFeeling", order: 19, question: "how did work feel?", type: "radio", options: [
+  { id: "workFeeling", order: 18, question: "how did work feel?", type: "radio", options: [
       opt("focused", "focused", 10), opt("productive", "productive", 8),
       opt("scattered", "scattered", 4), opt("drained", "drained", 2),
   ]},
-  // Habits (unchanged)
-  { id: "habits", order: 20, question: "what habit did you solidify today?", type: "habits" },
+  // Habits and plans
+  { id: "taskForToday", order: 19, question: "what are your tasks for today?", type: "tasks-checklist" },
+  { id: "taskForTomorrow", order: 20, question: "what tasks do you have for tomorrow?", type: "tasks-list" },
+  { id: "monthBucketList", order: 21, question: "what's on your bucket list this month?", type: "bucket-list" },
+  { id: "habits", order: 22, question: "what habit did you solidify today?", type: "habits" },
 ];
 
 export function stepById(id: StepId): StepDef {

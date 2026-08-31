@@ -1,6 +1,6 @@
-/* AI-CONTEXT-NOTE:{"R":"Unit tests for lib/scoring.ts: physical/mental/social/productivity scores, total, aura points.","IDD":[],"A":[],"AB":["lib/scoring.ts","lib/db/schema.ts"],"E":["npm test tests/scoring.test.ts"]} */
+/* AI-CONTEXT-NOTE:{"R":"Unit tests for lib/scoring.ts: physical/mental/social/productivity scores, bonus scoring (tasks, bucket list, habits), total, aura points.","IDD":[],"A":[],"AB":["lib/scoring.ts","lib/db/schema.ts"],"E":["npm test tests/scoring.test.ts"]} */
 import { describe, expect, it } from "vitest";
-import { AURA_COST, pointsBalance, scoreEntry, totalPoints } from "@/lib/scoring";
+import { AURA_COST, bucketListScore, habitsBonusScore, pointsBalance, scoreEntry, tasksScore, totalPoints } from "@/lib/scoring";
 import type { DayEntry } from "@/lib/db/schema";
 
 const base: DayEntry = {
@@ -21,9 +21,12 @@ const base: DayEntry = {
   kindnessActs: true,
   connectionStatus: "connected",
   learnedToday: "a".repeat(30),
-  tasksFinished: "b".repeat(30),
   deepWorkHours: 4,
   workFeeling: "focused",
+  tasksForToday: [],
+  tasksChecked: [],
+  tasksForTomorrow: [],
+  bucketListChecked: [],
   habitsChecked: [],
   activeHabitCount: 0,
   createdAt: 0,
@@ -90,7 +93,7 @@ describe("scoreEntry", () => {
     expect(s.social).toBe(9);
   });
 
-  it("productivity metric averages deep work, work feeling, and text bonuses", () => {
+  it("productivity metric averages deep work, work feeling, and learned bonus", () => {
     const s = scoreEntry(base);
     expect(s.productivity).toBe(10);
 
@@ -99,7 +102,6 @@ describe("scoreEntry", () => {
       deepWorkHours: 0,
       workFeeling: "drained",
       learnedToday: "",
-      tasksFinished: "",
     };
     expect(scoreEntry(low).productivity).toBe(1);
   });
@@ -125,5 +127,38 @@ describe("aura points", () => {
     expect(pointsBalance([base], 0)).toBe(39);
     expect(pointsBalance([base], 1)).toBe(-961);
     expect(AURA_COST).toBe(1000);
+  });
+});
+
+describe("bonus scoring", () => {
+  it("tasksScore returns 2 per checked task", () => {
+    expect(tasksScore(base)).toBe(0);
+    expect(tasksScore({ ...base, tasksChecked: ["a"] })).toBe(2);
+    expect(tasksScore({ ...base, tasksChecked: ["a", "b", "c"] })).toBe(6);
+  });
+
+  it("bucketListScore returns 10 per checked item", () => {
+    expect(bucketListScore(base)).toBe(0);
+    expect(bucketListScore({ ...base, bucketListChecked: ["x"] })).toBe(10);
+    expect(bucketListScore({ ...base, bucketListChecked: ["x", "y"] })).toBe(20);
+  });
+
+  it("habitsBonusScore returns 2 per checked habit", () => {
+    expect(habitsBonusScore(base)).toBe(0);
+    expect(habitsBonusScore({ ...base, habitsChecked: ["h1"] })).toBe(2);
+    expect(habitsBonusScore({ ...base, habitsChecked: ["h1", "h2", "h3", "h4", "h5"] })).toBe(10);
+  });
+
+  it("scoreEntry includes bonus fields and adds them to total", () => {
+    const s = scoreEntry({
+      ...base,
+      tasksChecked: ["a", "b"],
+      bucketListChecked: ["x"],
+      habitsChecked: ["h1"],
+    });
+    expect(s.tasks).toBe(4);
+    expect(s.bucketList).toBe(10);
+    expect(s.habitsBonus).toBe(2);
+    expect(s.total).toBe(39 + 4 + 10 + 2);
   });
 });

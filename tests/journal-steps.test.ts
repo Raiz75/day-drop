@@ -3,14 +3,14 @@ import { describe, expect, it } from "vitest";
 import { STEPS, stepById, optionLabel, CATEGORIES, getCategoryForStep } from "@/lib/journal/steps";
 
 describe("steps config", () => {
-  it("has exactly 20 ordered steps", () => {
-    expect(STEPS).toHaveLength(20);
-    expect(STEPS.map((s) => s.order)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+  it("has exactly 22 ordered steps", () => {
+    expect(STEPS).toHaveLength(22);
+    expect(STEPS.map((s) => s.order)).toEqual(Array.from({ length: 22 }, (_, i) => i + 1));
   });
 
   it("each step has a unique id", () => {
     const ids = STEPS.map((s) => s.id);
-    expect(new Set(ids).size).toBe(20);
+    expect(new Set(ids).size).toBe(22);
   });
 
   it("step types match expected", () => {
@@ -30,9 +30,11 @@ describe("steps config", () => {
     expect(stepById("kindnessActs").type).toBe("radio");
     expect(stepById("connectionStatus").type).toBe("radio");
     expect(stepById("learnedToday").type).toBe("text");
-    expect(stepById("tasksFinished").type).toBe("text");
     expect(stepById("deepWorkHours").type).toBe("tier-radio");
     expect(stepById("workFeeling").type).toBe("radio");
+    expect(stepById("taskForToday").type).toBe("tasks-checklist");
+    expect(stepById("taskForTomorrow").type).toBe("tasks-list");
+    expect(stepById("monthBucketList").type).toBe("bucket-list");
     expect(stepById("habits").type).toBe("habits");
   });
 
@@ -40,7 +42,6 @@ describe("steps config", () => {
     expect(stepById("highlights").minChars).toBe(50);
     expect(stepById("couldHaveBeenBetter").minChars).toBe(50);
     expect(stepById("learnedToday").minChars).toBe(20);
-    expect(stepById("tasksFinished").minChars).toBe(20);
   });
 
   it("storyOfTheDay is optional", () => {
@@ -71,12 +72,12 @@ describe("steps config", () => {
 });
 
 describe("categories", () => {
-  it("has exactly 4 categories", () => {
-    expect(CATEGORIES).toHaveLength(4);
+  it("has exactly 5 categories", () => {
+    expect(CATEGORIES).toHaveLength(5);
   });
 
-  it("category ids are physical, mental, social, productivity", () => {
-    expect(CATEGORIES.map((c) => c.id)).toEqual(["physical", "mental", "social", "productivity"]);
+  it("category ids are physical, mental, social, productivity, habits-plans", () => {
+    expect(CATEGORIES.map((c) => c.id)).toEqual(["physical", "mental", "social", "productivity", "habits-plans"]);
   });
 
   it("each category references valid step ids", () => {
@@ -93,9 +94,11 @@ describe("categories", () => {
     expect(new Set(allCategoryStepIds).size).toBe(allCategoryStepIds.length);
   });
 
-  it("habits step exists but is not in any category", () => {
+  it("habits step exists and is in habits-plans category", () => {
     const allCategoryStepIds = CATEGORIES.flatMap((c) => c.stepIds);
-    expect(allCategoryStepIds).not.toContain("habits");
+    expect(allCategoryStepIds).toContain("habits");
+    const habitsCategory = CATEGORIES.find((c) => c.stepIds.includes("habits"));
+    expect(habitsCategory?.id).toBe("habits-plans");
   });
 
   it("getCategoryForStep returns correct category for each step index", () => {
@@ -108,11 +111,14 @@ describe("categories", () => {
     // Social: indices 11-14
     expect(getCategoryForStep(11)?.id).toBe("social");
     expect(getCategoryForStep(14)?.id).toBe("social");
-    // Productivity: indices 15-18
+    // Productivity: indices 15-17
     expect(getCategoryForStep(15)?.id).toBe("productivity");
-    expect(getCategoryForStep(18)?.id).toBe("productivity");
-    // Habits (index 19) is not in any category
-    expect(getCategoryForStep(19)).toBeUndefined();
+    expect(getCategoryForStep(17)?.id).toBe("productivity");
+    // Habits-plans: indices 18-21
+    expect(getCategoryForStep(18)?.id).toBe("habits-plans");
+    expect(getCategoryForStep(21)?.id).toBe("habits-plans");
+    // Out of bounds returns undefined
+    expect(getCategoryForStep(22)).toBeUndefined();
   });
 
   it("each category has color and icon fields", () => {

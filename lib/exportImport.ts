@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"JSON backup build/parse/merge for settings import-export.","IDD":[{"?":"Strict zod validation before touching the DB; duplicates by primary key are skipped."},{"!":"v3 format uses new DayEntry schema - v2 backups rejected as unrecognized (full-wipe decision)"},{"?":"Aura rows restore as aura:<id> meta entries; activeHabitCount defaults to 0 on import"}],"A":[{"?":"components/settings/SettingsView.tsx"}],"AB":[{"?":"zod"},{"?":"lib/db/schema.ts"},{"?":"lib/db/repository.ts is NOT used here - direct db writes in one transaction"}],"E":[{"!!":"tests/exportImport.test.ts"},{"?":"Never partially import: wrap merge in db.transaction"}]} */
+/* AI-CONTEXT-NOTE:{"R":"JSON backup build/parse/merge for settings import-export.","IDD":[{"?":"Strict zod validation before touching the DB; duplicates by primary key are skipped."},{"!":"v4 format uses new DayEntry schema with tasks/bucket list fields - v3 backups rejected as unrecognized (full-wipe decision)"},{"?":"Aura rows restore as aura:<id> meta entries; activeHabitCount defaults to 0 on import"}],"A":[{"?":"components/settings/SettingsView.tsx"}],"AB":[{"?":"zod"},{"?":"lib/db/schema.ts"},{"?":"lib/db/repository.ts is NOT used here - direct db writes in one transaction"}],"E":[{"!!":"tests/exportImport.test.ts"},{"?":"Never partially import: wrap merge in db.transaction"}]} */
 import { z } from "zod";
 import { db, type DayEntry, type Habit } from "@/lib/db/schema";
 
@@ -22,9 +22,12 @@ const entrySchema = z.object({
   kindnessActs: z.boolean(),
   connectionStatus: z.string(),
   learnedToday: z.string(),
-  tasksFinished: z.string(),
   deepWorkHours: z.number(),
   workFeeling: z.string(),
+  tasksForToday: z.array(z.string()),
+  tasksChecked: z.array(z.string()),
+  tasksForTomorrow: z.array(z.string()),
+  bucketListChecked: z.array(z.string()),
   habitsChecked: z.array(z.string()),
   activeHabitCount: z.number().optional(),
   createdAt: z.number(),
@@ -41,7 +44,7 @@ export interface BackupAura { id: string; at: string }
 
 const backupSchema = z.object({
   app: z.literal("day-drop"),
-  version: z.literal(3),
+  version: z.literal(4),
   exportedAt: z.string(),
   entries: z.array(entrySchema),
   habits: z.array(habitSchema),
@@ -54,7 +57,7 @@ export function buildBackup(
   entries: DayEntry[], habits: Habit[], aura: BackupAura[],
 ): BackupFile {
   return {
-    app: "day-drop", version: 3, exportedAt: new Date().toISOString(),
+    app: "day-drop", version: 4, exportedAt: new Date().toISOString(),
     entries, habits, aura,
   };
 }

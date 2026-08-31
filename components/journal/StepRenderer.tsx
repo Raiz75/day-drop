@@ -7,6 +7,9 @@ import { CheckboxStep } from "./steps/CheckboxStep";
 import { HabitsStep } from "./steps/HabitsStep";
 import { RadioStep } from "./steps/RadioStep";
 import { TextStep } from "./steps/TextStep";
+import { TaskForTodayStep } from "./steps/TaskForTodayStep";
+import { TaskForTomorrowStep } from "./steps/TaskForTomorrowStep";
+import { BucketListStep } from "./steps/BucketListStep";
 
 interface RendererProps {
   step: StepDef;
@@ -17,6 +20,7 @@ interface RendererProps {
 
 export function StepRenderer({
   step,
+  answers,
   answerValue,
   onChange,
 }: RendererProps) {
@@ -30,6 +34,12 @@ export function StepRenderer({
       return <TextStep step={step} value={answerValue} onChange={onChange} />;
     case "habits":
       return <HabitsStep value={answerValue} onChange={onChange} />;
+    case "tasks-checklist":
+      return <TaskForTodayStep value={answerValue} checked={answers.tasksChecked ?? []} onChange={onChange} />;
+    case "tasks-list":
+      return <TaskForTomorrowStep value={answerValue} onChange={onChange} />;
+    case "bucket-list":
+      return <BucketListStep value={answerValue} onChange={onChange} />;
     default:
       return null;
   }

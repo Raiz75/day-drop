@@ -27,6 +27,10 @@ export function diffDays(a: string, b: string): number {
   return Math.round((fromStr(a).getTime() - fromStr(b).getTime()) / MS);
 }
 
+export function dayOfMonth(s: string): number {
+  return fromStr(s).getDate();
+}
+
 export function monthKeyOf(s: string): string {
   return s.slice(0, 7);
 }

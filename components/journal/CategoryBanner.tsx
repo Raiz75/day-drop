@@ -6,6 +6,7 @@ import {
   IconBrain,
   IconHeart,
   IconBolt,
+  IconCalendarCheck,
 } from "@tabler/icons-react";
 import { getCategoryForStep, STEPS } from "@/lib/journal/steps";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   IconBrain,
   IconHeart,
   IconBolt,
+  IconCalendarCheck,
 };
 
 const COLOR_CLASSES: Record<string, { bg: string; text: string; border: string }> = {
@@ -22,6 +24,7 @@ const COLOR_CLASSES: Record<string, { bg: string; text: string; border: string }
   sky:     { bg: "bg-sky-500/10",     text: "text-sky-600 dark:text-sky-400",     border: "border-sky-500/20" },
   violet:  { bg: "bg-violet-500/10",  text: "text-violet-600 dark:text-violet-400",  border: "border-violet-500/20" },
   amber:   { bg: "bg-amber-500/10",   text: "text-amber-600 dark:text-amber-400",   border: "border-amber-500/20" },
+  rose:    { bg: "bg-rose-500/10",    text: "text-rose-600 dark:text-rose-400",    border: "border-rose-500/20" },
 };
 
 interface CategoryBannerProps {

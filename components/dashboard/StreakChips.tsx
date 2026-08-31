@@ -22,9 +22,9 @@ export function StreakChips({ streaks }: { streaks: Streaks }) {
   const allZero = CHIPS.every((c) => !streaks[c.key]);
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1" role="list" aria-label="streaks">
+    <div className="flex flex-wrap gap-2" role="list" aria-label="streaks">
       {allZero ? (
-        <Badge variant="secondary" className="h-auto shrink-0 gap-1.5 py-1">
+        <Badge variant="secondary" className="h-auto gap-1.5 py-1 px-2.5">
           <IconFlame className="size-3.5" />
           start a streak
           <span className="tabular-nums">0</span>
@@ -34,7 +34,7 @@ export function StreakChips({ streaks }: { streaks: Streaks }) {
           <Badge
             key={key}
             variant={streaks[key] > 0 ? "default" : "secondary"}
-            className={cn("h-auto shrink-0 gap-1.5 py-1")}
+            className="h-auto gap-1.5 py-1 px-2.5"
             role="listitem"
           >
             <Icon className="size-3.5" />
