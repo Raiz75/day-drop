@@ -48,6 +48,11 @@ export function DashboardView() {
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferChecked, setTransferChecked] = useState(false);
 
+  const monthLabel = (() => {
+    const [y, m] = currentMonthKey.split("-").map(Number);
+    return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1));
+  })();
+
   useEffect(() => {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
@@ -121,8 +126,17 @@ export function DashboardView() {
         <HeatmapCalendar entries={list} onPickDay={setPickedDate} />
         <StreakChips streaks={streaks} />
         <TrendChart entries={list} />
-        <DailyTasksChecklist tasks={tasksForToday} checked={tasksChecked} onToggle={handleTaskToggle} />
-        <MonthBucketList checked={bucketListChecked} onToggle={handleBucketToggle} />
+        {/* Tasks of the Day */}
+        <section className="space-y-3">
+          <h3 className="font-heading text-lg font-semibold">Tasks for today</h3>
+          <DailyTasksChecklist tasks={tasksForToday} checked={tasksChecked} onToggle={handleTaskToggle} />
+        </section>
+
+        {/* Month Bucket List */}
+        <section className="space-y-3">
+          <h3 className="font-heading text-lg font-semibold">Bucket list — {monthLabel}</h3>
+          <MonthBucketList checked={bucketListChecked} onToggle={handleBucketToggle} />
+        </section>
       </main>
       <Fab
         mode={list.some((e) => e.date === today) ? "edit" : "plus"}
