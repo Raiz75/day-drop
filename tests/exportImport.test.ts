@@ -85,11 +85,17 @@ describe("exportImport", () => {
       expect(parsed.data.aura[0]).toEqual(aura[0]);
     }
   });
-  it("rejects garbage and legacy v1 backups", () => {
+  it("rejects garbage and legacy v1/v3 backups", () => {
     expect(parseBackup("{not json").ok).toBe(false);
     expect(parseBackup(JSON.stringify({ app: "other" })).ok).toBe(false);
     const legacy = { app: "day-drop", version: 1, exportedAt: "t", entries: [], habits: [], rewards: [] };
     expect(parseBackup(JSON.stringify(legacy)).ok).toBe(false);
+    const v3 = { app: "day-drop", version: 3, exportedAt: "t", entries: [], habits: [], aura: [] };
+    expect(parseBackup(JSON.stringify(v3)).ok).toBe(false);
+  });
+  it("produces version 4 backup", () => {
+    const backup = buildBackup([], [], []);
+    expect(backup.version).toBe(4);
   });
   it("merge skips duplicates and counts auras", async () => {
     await mockDb.entries.put(entry as unknown as Parameters<typeof mockDb.entries.put>[0]);
