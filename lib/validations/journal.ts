@@ -44,7 +44,7 @@ export function validateStep(
       return { ok: true };
     }
     case "bucket-list": {
-      const r = z.array(z.string()).safeParse(value);
+      const r = z.array(z.string()).safeParse(value ?? []);
       return r.success ? { ok: true } : { ok: false, error: "invalid bucket list" };
     }
   }
