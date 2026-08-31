@@ -100,6 +100,10 @@ export async function updateBucketListItem(monthKey: string, itemText: string, d
   await saveBucketList(monthKey, updated);
 }
 
+export async function updateEntry(date: string, patch: Partial<Omit<DayEntry, "date">>): Promise<void> {
+  await db.entries.update(date, patch);
+}
+
 export async function redeemAura(): Promise<void> {
   await putMeta(auraKey(newId()), { at: new Date().toISOString() });
 }

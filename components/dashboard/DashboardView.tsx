@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, aura banner, heatmap calendar, streak chips, 30-day trend, DayDetailSheet for picked days, Fab + JournalWizard mount, BottomNav.","IDD":[{"?":"balance = pointsBalance(all entries, auraCount) recomputed live - never stored"},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration effect mounts here in production only; public/sw.js + public/manifest.webmanifest back it."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes balance/auraCount/onRedeem this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DayDetailSheet"}],"AB":[{"?":"lib/hooks/useEntries.ts + useAura.ts"},{"?":"lib/db/repository.ts redeemAura"},{"?":"lib/scoring.ts pointsBalance"},{"?":"lib/streaks.ts allStreaks"},{"?":"components/journal/JournalWizard.tsx"},{"?":"components/shared/BottomNav.tsx fixed height dictates pb-20 shell padding"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> banner X/1000 grows; at 1000 'Reward self' -> +1 aura toast"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Dashboard orchestrator: greeting + flame streak chip, aura banner, heatmap calendar, streak chips, 30-day trend, daily tasks checklist, DayDetailSheet for picked days, Fab + JournalWizard mount, BottomNav.","IDD":[{"?":"balance = pointsBalance(all entries, auraCount) recomputed live - never stored"},{"?":"ALL hooks run before the storage early-returns to keep hook order stable."},{"?":"Picked heatmap day opens DayDetailSheet only when that day's entry exists."},{"?":"SW registration effect mounts here in production only; public/sw.js + public/manifest.webmanifest back it."},{"?":"Early-returns StorageUnavailable when IndexedDB is blocked; null (still hydrating) renders nothing."},{"?":"DailyTasksChecklist reads tasksForToday/tasksChecked from today's entry; onToggle calls updateEntry."}],"A":[{"!!!":"components/dashboard/RewardBanner.tsx","CRITICAL":"consumes balance/auraCount/onRedeem this view computes"},{"?":"app/page.tsx"},{"?":"HeatmapCalendar/StreakChips/TrendChart/DailyTasksChecklist/DayDetailSheet"}],"AB":[{"?":"lib/hooks/useEntries.ts + useAura.ts"},{"?":"lib/db/repository.ts redeemAura, updateEntry"},{"?":"lib/scoring.ts pointsBalance"},{"?":"lib/streaks.ts allStreaks"},{"?":"components/journal/JournalWizard.tsx"},{"?":"components/shared/BottomNav.tsx fixed height dictates pb-20 shell padding"}],"E":[{"!!":"npm test tests/dashboard-view.test.ts"},{"!!":"npm run build"},{"?":"Manual smoke: submit entry -> banner X/1000 grows; at 1000 'Reward self' -> +1 aura toast"}]} */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,9 +14,10 @@ import { RewardBanner } from "./RewardBanner";
 import { HeatmapCalendar } from "./HeatmapCalendar";
 import { StreakChips, type Streaks } from "./StreakChips";
 import { TrendChart } from "./TrendChart";
+import { DailyTasksChecklist } from "./DailyTasksChecklist";
 import { DayDetailSheet } from "./DayDetailSheet";
 import { todayStr, fromStr } from "@/lib/format";
-import { redeemAura } from "@/lib/db/repository";
+import { redeemAura, updateEntry } from "@/lib/db/repository";
 import { useEntries } from "@/lib/hooks/useEntries";
 import { useAuraRecords } from "@/lib/hooks/useAura";
 import { useStorageAvailable } from "@/lib/hooks/useHydrated";
@@ -61,6 +62,16 @@ export function DashboardView() {
   const pickedEntry = pickedDate
     ? list.find((e) => e.date === pickedDate) ?? null
     : null;
+  const todayEntry = list.find((e) => e.date === today);
+  const tasksForToday = todayEntry?.tasksForToday ?? [];
+  const tasksChecked = todayEntry?.tasksChecked ?? [];
+  const handleTaskToggle = (task: string) => {
+    if (!todayEntry) return;
+    const next = tasksChecked.includes(task)
+      ? tasksChecked.filter((t) => t !== task)
+      : [...tasksChecked, task];
+    void updateEntry(today, { tasksChecked: next }).catch(() => {});
+  };
   const dateLine = new Intl.DateTimeFormat("en-US", {
     weekday: "long", month: "long", day: "numeric",
   }).format(fromStr(today));
@@ -80,6 +91,7 @@ export function DashboardView() {
         <HeatmapCalendar entries={list} onPickDay={setPickedDate} />
         <StreakChips streaks={streaks} />
         <TrendChart entries={list} />
+        <DailyTasksChecklist tasks={tasksForToday} checked={tasksChecked} onToggle={handleTaskToggle} />
       </main>
       <Fab
         mode={list.some((e) => e.date === today) ? "edit" : "plus"}
