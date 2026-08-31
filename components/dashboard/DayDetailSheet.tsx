@@ -1,4 +1,4 @@
-/* AI-CONTEXT-NOTE:{"R":"Bottom sheet readout of one journal entry: mood title, physical feeling, tier labels, text quotes, task checks, habit list (unknown ids => '(removed habit)').","IDD":[{"?":"Habit-name resolution needs active+archived habits; hooks live in inner SheetBody so they only run while the sheet is open."},{"?":"optionLabel throws on unknown ids - safeLabel/tierLabel wrap it with fallbacks so corrupt entries never crash the sheet."}],"A":[{"!!!":"components/dashboard/DashboardView.tsx","CRITICAL":"sole consumer - passes picked entry + open state"},{"?":"components/ui/sheet.tsx bottom side"}],"AB":[{"!":"lib/journal/steps.ts optionLabel/stepById","renaming an option id changes readout fallbacks"},{"?":"lib/hooks/useHabits active+archived lists"},{"?":"lib/db/schema.ts DayEntry"}],"E":[{"!!":"npm run build"},{"?":"Empty-string fields must render nothing, not throw"},{"*":"Removed habit ids fall back to '(removed habit)'"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Bottom sheet readout of one journal entry: mood title, physical feeling, tier labels, text quotes, task checks, habit list (unknown ids => '(removed habit)'), tasks & bucket list.","IDD":[{"?":"Habit-name resolution needs active+archived habits; hooks live in inner SheetBody so they only run while the sheet is open."},{"?":"optionLabel throws on unknown ids - safeLabel/tierLabel wrap it with fallbacks so corrupt entries never crash the sheet."},{"!":"tasksForToday is the full list of tasks; tasksChecked holds the ones the user checked off."},{"?":"bucketListChecked is a flat array of completed bucket list item texts."}],"A":[{"!!!":"components/dashboard/DashboardView.tsx","CRITICAL":"sole consumer - passes picked entry + open state"},{"?":"components/ui/sheet.tsx bottom side"}],"AB":[{"!":"lib/journal/steps.ts optionLabel/stepById","renaming an option id changes readout fallbacks"},{"?":"lib/hooks/useHabits active+archived lists"},{"?":"lib/db/schema.ts DayEntry"}],"E":[{"!!":"npm run build"},{"?":"Empty-string fields must render nothing, not throw"},{"*":"Removed habit ids fall back to '(removed habit)'"}]} */
 "use client";
 
 import type { ComponentType } from "react";
@@ -114,6 +114,38 @@ function SheetBody({ entry }: { entry: DayEntry }) {
               <li key={id} className="flex items-center gap-2 text-sm">
                 <IconCheck className="size-4 shrink-0 text-primary" />
                 {names.get(id) ?? "(removed habit)"}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {entry.tasksForToday.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">tasks</p>
+          <ul className="flex flex-col gap-1">
+            {entry.tasksForToday.map((task) => (
+              <li key={task} className="flex items-center gap-2 text-sm">
+                {entry.tasksChecked.includes(task) ? (
+                  <IconCheck className="size-4 shrink-0 text-primary" />
+                ) : (
+                  <IconX className="size-4 shrink-0 text-muted-foreground/50" />
+                )}
+                {task}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {entry.bucketListChecked.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">bucket list</p>
+          <ul className="flex flex-col gap-1">
+            {entry.bucketListChecked.map((item) => (
+              <li key={item} className="flex items-center gap-2 text-sm">
+                <IconCheck className="size-4 shrink-0 text-primary" />
+                {item}
               </li>
             ))}
           </ul>
