@@ -55,21 +55,35 @@ function productivityScore(e: DayEntry): number {
   const deepWork = deepWorkScores[e.deepWorkHours] ?? 1;
   const workScores: Record<string, number> = { focused: 10, productive: 8, scattered: 4, drained: 2 };
   const work = workScores[e.workFeeling] ?? 1;
-  const textBonuses = [e.learnedToday, e.tasksFinished].filter((t) => t && t.length > 0).length;
-  const textBonusScaled = Math.round((textBonuses / 2) * 10);
-  const avg = (deepWork + work + textBonusScaled) / 3;
+  const learnedBonus = e.learnedToday && e.learnedToday.length > 0 ? 10 : 0;
+  const avg = (deepWork + work + learnedBonus) / 3;
   return Math.min(10, Math.max(1, Math.round(avg)));
+}
+
+export function tasksScore(e: DayEntry): number {
+  return e.tasksChecked.length * 2;
+}
+
+export function bucketListScore(e: DayEntry): number {
+  return e.bucketListChecked.length * 10;
+}
+
+export function habitsBonusScore(e: DayEntry): number {
+  return e.habitsChecked.length * 2;
 }
 
 export function scoreEntry(
   e: DayEntry,
-): Record<MetricKey, number> & { total: number } {
+): Record<MetricKey, number> & { tasks: number; bucketList: number; habitsBonus: number; total: number } {
   const physical = physicalScore(e);
   const mental = mentalScore(e);
   const social = socialScore(e);
   const productivity = productivityScore(e);
-  const total = physical + mental + social + productivity;
-  return { physical, mental, social, productivity, total };
+  const tasks = tasksScore(e);
+  const bucketList = bucketListScore(e);
+  const habitsBonus = habitsBonusScore(e);
+  const total = physical + mental + social + productivity + tasks + bucketList + habitsBonus;
+  return { physical, mental, social, productivity, tasks, bucketList, habitsBonus, total };
 }
 
 export function totalPoints(entries: DayEntry[]): number {
