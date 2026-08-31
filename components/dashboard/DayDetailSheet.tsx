@@ -100,12 +100,6 @@ function SheetBody({ entry }: { entry: DayEntry }) {
           </blockquote>
         ))}
 
-      {entry.tasksFinished && (
-        <p className="text-sm text-muted-foreground">
-          tasks: {entry.tasksFinished}
-        </p>
-      )}
-
       {entry.learnedToday && (
         <p className="text-sm text-muted-foreground">
           learned: {entry.learnedToday}

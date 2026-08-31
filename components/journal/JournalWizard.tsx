@@ -156,9 +156,13 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
         connectionStatus: a.connectionStatus ?? "neutral",
         // Work & Productivity
         learnedToday: a.learnedToday ?? "",
-        tasksFinished: a.tasksFinished ?? "",
         deepWorkHours: a.deepWorkHours ?? 0,
         workFeeling: a.workFeeling ?? "scattered",
+        // Habits and plans
+        tasksForToday: a.tasksForToday ?? [],
+        tasksChecked: a.tasksChecked ?? [],
+        tasksForTomorrow: a.tasksForTomorrow ?? [],
+        bucketListChecked: a.bucketListChecked ?? [],
         // Habits
         habitsChecked: a.habitsChecked ?? [],
         activeHabitCount: 0,

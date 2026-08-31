@@ -68,20 +68,20 @@ describe("machine", () => {
     s = reducer(s, { type: "answer", patch: { nutrition: [] } });
     expect(canAdvance(s)).toBe(true);
     s = reducer(
-      reducer(initialWizardState(), { type: "goto", index: 16 }),
-      { type: "answer", patch: { tasksFinished: "completed the main task for today" } },
+      reducer(initialWizardState(), { type: "goto", index: 18 }),
+      { type: "answer", patch: { tasksForToday: [] } },
     );
     expect(canAdvance(s)).toBe(true);
   });
 
   it("next clamps at the last step and goto stays in bounds", () => {
-    const s = reducer(initialWizardState(), { type: "goto", index: 19 });
+    const s = reducer(initialWizardState(), { type: "goto", index: 21 });
     expect(canAdvance(reducer(s, { type: "answer", patch: { habitsChecked: ["x"] } }))).toBe(true);
     const end = reducer(reducer(s, { type: "answer", patch: { habitsChecked: [] } }), {
       type: "next",
     });
-    expect(end.stepIndex).toBe(19);
-    expect(reducer(s, { type: "goto", index: 99 }).stepIndex).toBe(19);
+    expect(end.stepIndex).toBe(21);
+    expect(reducer(s, { type: "goto", index: 99 }).stepIndex).toBe(21);
     expect(reducer(s, { type: "goto", index: -5 }).stepIndex).toBe(0);
   });
 });
