@@ -1,9 +1,19 @@
-/* AI-CONTEXT-NOTE:{"R":"Full-screen journal wizard overlay: draft resume/autosave via repository, machine-driven navigation, submitEntry on Finish, celebration on day-100 archives.","IDD":[{"?":"Remounts fresh per open: outer component keys the inner flow by session so stale answers never leak across sessions"},{"?":"On mount: getDraft() try/catch - wrong-date or corrupt drafts are silently discarded, never crash; with no draft, today's submitted entry prefills for editing (createdAt preserved on resubmit)"},{"?":"Autosave is fire-and-forget and gated until draft hydration finished (never overwrites a draft it has not read)"},{"?":"Tier answers stay numeric indexes; sleep uses tier-radio for sleepDuration - UI never writes option-id strings into tier fields"},{"?":"storyOfTheDay '' -> null normalized at submit; createdAt preserved on same-day edit"},{"?":"entry.activeHabitCount is a type-satisfying placeholder - repository.submitEntry overwrites it with the active-habit snapshot from its arg"},{"?":"Category celebration fires on category boundary advancement via fireCategoryCelebration"}],"A":[{"!!!":"components/dashboard/DashboardView.tsx mounts <JournalWizard open onOpenChange onSubmitted/>"}],"AB":[{"?":"lib/journal/machine.ts reducer/canAdvance/answerFor"},{"?":"lib/journal/steps.ts STEPS, CATEGORIES, getCategoryForStep"},{"?":"lib/db/repository.ts getDraft/saveDraft/submitEntry/getTodayEntry/getLatestEntryBefore"},{"?":"components/journal/StepRenderer.tsx"},{"?":"components/journal/CelebrationScreen.tsx"},{"?":"components/journal/CategoryBanner.tsx"},{"?":"components/journal/ProgressDots.tsx"},{"?":"components/journal/CategoryCelebration.tsx"}],"E":[{"!!":"npm run build"},{"!!":"npm test tests/machine.test.ts pins machine behavior"},{"?":"Manual smoke: mid-wizard reload resumes draft; same-day edit prefills"}]} */
+/* AI-CONTEXT-NOTE:{"R":"Full-screen journal wizard overlay: draft resume/autosave via repository, machine-driven navigation, submitEntry on Finish, celebration on day-100 archives, carry-over pre-fill from previous day, unchecked-task warning dialog.","IDD":[{"?":"Remounts fresh per open: outer component keys the inner flow by session so stale answers never leak across sessions"},{"?":"On mount: getDraft() try/catch - wrong-date or corrupt drafts are silently discarded, never crash; with no draft, today's submitted entry prefills for editing (createdAt preserved on resubmit)"},{"?":"Carry-over: when no draft and no todayEntry, loads previous day's tasksForTomorrow into tasksForToday via getLatestEntryBefore"},{"?":"Warning dialog: on Next from taskForToday step, if unchecked tasks exist, shows AlertDialog; Yes carries unchecked to tasksForTomorrow, No drops them"},{"?":"Autosave is fire-and-forget and gated until draft hydration finished (never overwrites a draft it has not read)"},{"?":"Tier answers stay numeric indexes; sleep uses tier-radio for sleepDuration - UI never writes option-id strings into tier fields"},{"?":"storyOfTheDay '' -> null normalized at submit; createdAt preserved on same-day edit"},{"?":"entry.activeHabitCount is a type-satisfying placeholder - repository.submitEntry overwrites it with the active-habit snapshot from its arg"},{"?":"Category celebration fires on category boundary advancement via fireCategoryCelebration"}],"A":[{"!!!":"components/dashboard/DashboardView.tsx mounts <JournalWizard open onOpenChange onSubmitted/>"}],"AB":[{"?":"lib/journal/machine.ts reducer/canAdvance/answerFor"},{"?":"lib/journal/steps.ts STEPS, CATEGORIES, getCategoryForStep"},{"?":"lib/db/repository.ts getDraft/saveDraft/submitEntry/getTodayEntry/getLatestEntryBefore"},{"?":"components/journal/StepRenderer.tsx"},{"?":"components/journal/CelebrationScreen.tsx"},{"?":"components/journal/CategoryBanner.tsx"},{"?":"components/journal/ProgressDots.tsx"},{"?":"components/journal/CategoryCelebration.tsx"},{"?":"components/ui/alert-dialog.tsx AlertDialog"}],"E":[{"!!":"npm run build"},{"!!":"npm test tests/machine.test.ts pins machine behavior"},{"?":"Manual smoke: mid-wizard reload resumes draft; same-day edit prefills"},{"?":"Manual smoke: new day with no draft shows carry-over tasks; next on taskForToday shows warning"}]} */
 "use client";
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import { IconArrowLeft, IconArrowRight, IconX } from "@tabler/icons-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { CelebrationScreen } from "./CelebrationScreen";
 import { StepRenderer } from "./StepRenderer";
@@ -54,6 +64,7 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
   const [ready, setReady] = useState(false);
   const [celebration, setCelebration] = useState<Habit[] | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingTasks, setPendingTasks] = useState<string[] | null>(null);
   const activeHabits = useActiveHabits();
 
   useEffect(() => {
@@ -92,7 +103,17 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
           void updatedAt;
           dispatch({ type: "answer", patch: answers });
         } else {
-          dispatch({ type: "answer", patch: { habitsChecked: [] } });
+          const latestEntry = await getLatestEntryBefore(today);
+          const carriedTasks = latestEntry?.tasksForTomorrow ?? [];
+          dispatch({
+            type: "answer",
+            patch: {
+              tasksForToday: carriedTasks,
+              tasksChecked: [],
+              tasksForTomorrow: [],
+              habitsChecked: [],
+            },
+          });
         }
       } catch {
         if (!cancelled) dispatch({ type: "answer", patch: { habitsChecked: [] } });
@@ -116,6 +137,19 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
   const last = state.stepIndex === STEPS.length - 1;
   const handleNext = () => {
     if (!canAdvance(state)) return;
+    if (step.id === "taskForToday") {
+      const allTasks: string[] = Array.isArray(state.answers.tasksForToday)
+        ? state.answers.tasksForToday
+        : [];
+      const checked: string[] = Array.isArray(state.answers.tasksChecked)
+        ? state.answers.tasksChecked
+        : [];
+      const unchecked = allTasks.filter((t) => !checked.includes(t));
+      if (unchecked.length > 0) {
+        setPendingTasks(unchecked);
+        return;
+      }
+    }
     const currentCategory = getCategoryForStep(state.stepIndex);
     dispatch({ type: "next" });
     // Fire celebration when crossing a category boundary
@@ -236,6 +270,46 @@ function WizardFlow({ onClose, onSubmitted }: { onClose(): void; onSubmitted(): 
           }}
         />
       )}
+      <AlertDialog open={pendingTasks !== null} onOpenChange={(open) => { if (!open) setPendingTasks(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Carry tasks to tomorrow?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unchecked tasks. Would you like to carry them to tomorrow&apos;s list?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              dispatch({ type: "answer", patch: { tasksForTomorrow: [] } });
+              setPendingTasks(null);
+              const currentCategory = getCategoryForStep(state.stepIndex);
+              dispatch({ type: "next" });
+              if (currentCategory) {
+                const nextCategory = getCategoryForStep(state.stepIndex + 1);
+                if (!nextCategory || nextCategory.id !== currentCategory.id) {
+                  fireCategoryCelebration(currentCategory);
+                }
+              }
+            }}>
+              No, drop them
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              dispatch({ type: "answer", patch: { tasksForTomorrow: pendingTasks ?? [] } });
+              setPendingTasks(null);
+              const currentCategory = getCategoryForStep(state.stepIndex);
+              dispatch({ type: "next" });
+              if (currentCategory) {
+                const nextCategory = getCategoryForStep(state.stepIndex + 1);
+                if (!nextCategory || nextCategory.id !== currentCategory.id) {
+                  fireCategoryCelebration(currentCategory);
+                }
+              }
+            }}>
+              Yes, carry to tomorrow
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
