@@ -466,17 +466,20 @@ import type { DayEntry } from "@/lib/db/schema";
 
 export function TaskForTodayStep({
   value,
+  checked,
   onChange,
 }: {
   value: unknown;
+  checked: string[];
   onChange(patch: Partial<DayEntry>): void;
 }) {
   const tasks: string[] = Array.isArray(value) ? value : [];
-  const checked: string[] = []; // checked comes from answers.tasksChecked
 
-  const toggle = (_task: string) => {
-    // tasksChecked is handled separately in the wizard
-    // This step just displays the list; checking is done via tasksChecked field
+  const toggle = (task: string) => {
+    const next = checked.includes(task)
+      ? checked.filter((t) => t !== task)
+      : [...checked, task];
+    onChange({ tasksChecked: next });
   };
 
   if (tasks.length === 0) {
@@ -503,7 +506,7 @@ export function TaskForTodayStep({
 }
 ```
 
-Note: The actual implementation will need to read `tasksChecked` from the answers and toggle items in/out. The wizard dispatches `tasksChecked` via the `onChange` callback. The step reads `answers.tasksChecked` to determine which items are checked. This will be refined during implementation to properly integrate with the wizard's answer state.
+Note: This step needs a `checked` prop (the `tasksChecked` array from answers) in addition to `value` (the `tasksForToday` array). The `StepRenderer` will need to pass this — see Task 8 for the integration.
 
 - [ ] **Step 2: Create TaskForTomorrowStep**
 
@@ -739,19 +742,30 @@ git commit -m "feat: add TaskForToday, TaskForTomorrow, BucketList wizard steps"
 
 - [ ] **Step 1: Update StepRenderer to dispatch new types**
 
-In `components/journal/StepRenderer.tsx`, add imports and cases:
+In `components/journal/StepRenderer.tsx`, update the interface to pass `answers` (full partial) to step components, and add imports + cases:
 
 ```ts
 import { TaskForTodayStep } from "./steps/TaskForTodayStep";
-import { TaskForTomorrowStep } in "./steps/TaskForTomorrowStep";
+import { TaskForTomorrowStep } from "./steps/TaskForTomorrowStep";
 import { BucketListStep } from "./steps/BucketListStep";
 ```
 
-Add cases in the switch:
+Update `RendererProps` to include `answers`:
+
+```ts
+interface RendererProps {
+  step: StepDef;
+  answers: Partial<DayEntry>;
+  answerValue: unknown;
+  onChange(patch: Partial<DayEntry>): void;
+}
+```
+
+Destructure `answers` in the component and pass to new step types:
 
 ```ts
 case "tasks-checklist":
-  return <TaskForTodayStep value={answerValue} onChange={onChange} />;
+  return <TaskForTodayStep value={answerValue} checked={answers.tasksChecked ?? []} onChange={onChange} />;
 case "tasks-list":
   return <TaskForTomorrowStep value={answerValue} onChange={onChange} />;
 case "bucket-list":
