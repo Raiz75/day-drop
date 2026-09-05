@@ -56,7 +56,7 @@ export function TaskForTomorrowStep({
               key={task}
               className="flex items-center gap-2 rounded-2xl border border-border bg-input/30 px-4 py-3"
             >
-              <span className="flex-1 truncate text-base">{task}</span>
+              <span className="flex-1 text-base">{task}</span>
               <Button
                 variant="ghost"
                 size="icon-sm"

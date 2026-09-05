@@ -38,7 +38,7 @@ export function TaskForTodayStep({
           className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border bg-input/30 px-4 py-3 transition-colors hover:bg-input/50"
         >
           <Checkbox checked={checked.includes(task)} onCheckedChange={() => toggle(task)} />
-          <span className="flex-1 truncate text-base">{task}</span>
+          <span className="flex-1 text-base">{task}</span>
         </label>
       ))}
     </div>

@@ -102,7 +102,7 @@ export function BucketListStep({
                 checked={checked.includes(item.text)}
                 onCheckedChange={() => toggleItem(item.text)}
               />
-              <span className="flex-1 truncate text-base">{item.text}</span>
+              <span className="flex-1 text-base">{item.text}</span>
               {isEditable && (
                 <Button
                   variant="ghost"

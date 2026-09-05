@@ -37,7 +37,7 @@ export function MonthBucketList({ checked, onToggle }: MonthBucketListProps) {
             checked={checked.includes(item.text)}
             onCheckedChange={() => onToggle(item.text)}
           />
-          <span className="flex-1 truncate text-base">{item.text}</span>
+          <span className="flex-1 text-base">{item.text}</span>
         </label>
       ))}
     </div>
